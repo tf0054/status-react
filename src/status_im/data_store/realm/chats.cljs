@@ -28,10 +28,13 @@
 (defn get-active-group-chats
   []
   (map
-    (fn [{:keys [chat-id public-key private-key]}]
-      {:chat-id chat-id
-       :keypair {:private private-key
-                 :public  public-key}})
+    (fn [{:keys [chat-id public-key private-key public?]}]
+      (let [group {:group-id chat-id
+                   :public?  public?}]
+        (if (and public-key private-key)
+          (assoc group :keypair {:private private-key
+                                 :public  public-key})
+          group)))
     (realm/realm-collection->list (groups true))))
 
 (defn get-by-id
@@ -66,8 +69,8 @@
 (defn has-contact?
   [chat-id identity]
   (let [contacts (get-contacts chat-id)
-        contact (.find contacts (fn [object _ _]
-                                  (= identity (aget object "identity"))))]
+        contact  (.find contacts (fn [object _ _]
+                                   (= identity (aget object "identity"))))]
     (if contact true false)))
 
 (defn- save-contacts
@@ -91,9 +94,9 @@
 (defn- delete-contacts
   [identities contacts]
   (doseq [contact-identity identities]
-     (when-let [contact (.find contacts (fn [object _ _]
-                                        (= contact-identity (aget object "identity"))))]
-       (realm/delete @realm/account-realm contact))))
+    (when-let [contact (.find contacts (fn [object _ _]
+                                         (= contact-identity (aget object "identity"))))]
+      (realm/delete @realm/account-realm contact))))
 
 (defn remove-contacts
   [chat-id identities]

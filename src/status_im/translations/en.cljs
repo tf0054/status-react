@@ -119,6 +119,9 @@
    :chats                                 "Chats"
    :new-chat                              "New chat"
    :new-group-chat                        "New group chat"
+   :new-public-group-chat                 "Join public group chat"
+   :empty-topic                           "Empty topic"
+   :public-group-topic                    "Topic"
 
    ;discover
    :discover                              "Discover"

@@ -508,17 +508,18 @@
   (after (fn [_ _] (dispatch [:navigation-replace :chat-list])))
   (u/side-effect!
     (fn [{:keys [web3 current-chat-id chats current-public-key]} _]
-      (let [{:keys [public-key private-key]} (chats current-chat-id)]
+      (let [{:keys [public-key private-key public?]} (chats current-chat-id)]
         (protocol/stop-watching-group!
           {:web3     web3
            :group-id current-chat-id})
-        (protocol/leave-group-chat!
-          {:web3     web3
-           :group-id current-chat-id
-           :keypair  {:public  public-key
-                      :private private-key}
-           :message  {:from       current-public-key
-                      :message-id (random/id)}}))
+        (when-not public?
+          (protocol/leave-group-chat!
+            {:web3     web3
+             :group-id current-chat-id
+             :keypair  {:public  public-key
+                        :private private-key}
+             :message  {:from       current-public-key
+                        :message-id (random/id)}})))
       (dispatch [::remove-chat current-chat-id]))))
 
 (register-handler ::remove-chat

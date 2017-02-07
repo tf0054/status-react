@@ -107,7 +107,8 @@
           (case type
             :message (dispatch [:received-protocol-message! message])
             :group-message (dispatch [:received-protocol-message! message])
-            :ack (if (#{:message :group-message} (:type payload))
+            :public-group-message (dispatch [:received-protocol-message! message])
+            :ack (if (#{:message :group-message :public-group-message} (:type payload))
                    (dispatch [:message-delivered message])
                    (dispatch [:pending-message-remove message]))
             :seen (dispatch [:message-seen message])

@@ -10,18 +10,17 @@
 
 (defn prepare-mesage
   [{:keys [message group-id keypair new-keypair type]}]
-  (let [message' (-> message
-                     (update :payload assoc
-                             :group-id group-id
-                             :type type
-                             :timestamp (u/timestamp))
-                     (assoc :topics [group-id]
-                            :requires-ack? true
-                            :keypair keypair
-                            :type type))]
-    (if new-keypair
-      (assoc message' :new-keypair keypair)
-      message')))
+  (let [message'  (-> message
+                      (update :payload assoc
+                              :group-id group-id
+                              :type type
+                              :timestamp (u/timestamp))
+                      (assoc :topics [group-id]
+                             :requires-ack? true
+                             :type type))]
+    (cond-> message'
+            keypair (assoc :keypair keypair)
+            new-keypair (assoc :new-keypair keypair))))
 
 (defn- send-group-message!
   [{:keys [web3] :as opts} type]
@@ -31,14 +30,19 @@
     (debug :send-group-message message)
     (d/add-pending-message! web3 message)))
 
-(s/def ::group-message
+(s/def :group/message
   (s/merge :protocol/message (s/keys :req-un [:chat-message/payload])))
 
 (defn send!
   [{:keys [keypair message] :as options}]
   {:pre [(valid? :message/keypair keypair)
-         (valid? ::group-message message)]}
+         (valid? :group/message message)]}
   (send-group-message! options :group-message))
+
+(defn send-to-public-group!
+  [{:keys [message] :as options}]
+  {:pre [(valid? :group/message message)]}
+  (send-group-message! options :public-group-message))
 
 (defn leave!
   [options]
