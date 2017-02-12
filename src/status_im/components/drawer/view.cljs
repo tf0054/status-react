@@ -48,15 +48,15 @@
 
 (defn drawer-menu []
   (let
-    [account         (subscribe [:get-current-account])
-     profile         (subscribe [:get :profile-edit])
-     keyboard-height (subscribe [:get :keyboard-height])
-     placeholder     (generate-gfy)
-     status-edit?    (r/atom false)
-     status-text     (r/atom nil)]
+      [account         (subscribe [:get-current-account])
+       profile         (subscribe [:get :profile-edit])
+       keyboard-height (subscribe [:get :keyboard-height])
+       placeholder     (generate-gfy)
+       status-edit?    (r/atom false)
+       status-text     (r/atom nil)]
     (fn []
       (let [{:keys [name photo-path status]} @account
-            {new-name   :name} @profile]
+            {new-name :name}                 @profile]
         [view st/drawer-menu
          [touchable-without-feedback {:on-press #(dismiss-keyboard!)}
           [view st/drawer-menu
@@ -107,6 +107,8 @@
                         :handler #(dispatch [:navigate-to :my-profile])}]
             [menu-item {:name    (label :t/discover)
                         :handler #(dispatch [:navigate-to-tab :discover])}]
+            [menu-item {:name    "RTC"
+                        :handler #(dispatch [:navigate-to :rtc])}]
             [menu-item {:name    (label :t/contacts)
                         :handler #(dispatch [:navigate-to-tab :contact-list])}]]
            (when (zero? @keyboard-height)
