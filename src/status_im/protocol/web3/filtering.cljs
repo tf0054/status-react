@@ -27,3 +27,20 @@
   (doseq [[web3 filters] @filters]
     (doseq [options (keys filters)]
       (remove-filter! web3 options))))
+
+(defonce rtc-filters (atom {}))
+
+(defn remove-rtc-filter! [web3 options]
+  (when-let [filter (get-in @rtc-filters [web3 options])]
+    (.stopWatching filter)
+    (debug :stop-rtc-watching options)
+    (swap! rtc-filters update web3 dissoc options)))
+
+(defn add-rtc-filter!
+  [web3 options callback]
+  (remove-rtc-filter! web3 options)
+  (debug :add-rtc-filter options)
+  (let [filter (.filter (.-eth web3)
+                        (clj->js options)
+                        callback)]
+    (swap! rtc-filters assoc-in [web3 options] filter)))

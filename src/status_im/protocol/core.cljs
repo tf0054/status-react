@@ -12,6 +12,7 @@
             [status-im.protocol.encryption :as e]
             [status-im.protocol.discoveries :as discoveries]
             [cljs.spec :as s]
+            [status-im.utils.hex :as h]
             [status-im.utils.random :as random]))
 
 ;; user
@@ -59,9 +60,9 @@
 (s/def ::profile-keypair :message/keypair)
 (s/def ::options
   (s/merge
-    (s/keys :req-un [::rpc-url ::identity ::groups ::profile-keypair
-                     ::callback :discoveries/hashtags ::contacts])
-    ::d/delivery-options))
+   (s/keys :req-un [::rpc-url ::identity ::groups ::profile-keypair
+                    ::callback :discoveries/hashtags ::contacts])
+   ::d/delivery-options))
 
 (def stop-watching-all! f/remove-all-filters!)
 (def reset-all-pending-messages! d/reset-all-pending-messages!)
@@ -80,16 +81,16 @@
     ;; start listening to groups
     (doseq [{:keys [chat-id keypair]} groups]
       (f/add-filter!
-        web3
-        {:topics [chat-id]}
-        (l/message-listener (assoc listener-options :callback callback
-                                                    :keypair keypair))))
+       web3
+       {:topics [chat-id]}
+       (l/message-listener (assoc listener-options :callback callback
+                                  :keypair keypair))))
     ;; start listening to user's inbox
     (f/add-filter!
-      web3
-      {:to     identity
-       :topics [f/status-topic]}
-      (l/message-listener (assoc listener-options :callback callback)))
+     web3
+     {:to     identity
+      :topics [f/status-topic]}
+     (l/message-listener (assoc listener-options :callback callback)))
     ;; start listening to profiles
     (doseq [{:keys [identity keypair]} contacts]
       (watch-user! {:web3     web3
@@ -103,8 +104,29 @@
                                       :message-id (random/id)
                                       :keypair    profile-keypair}})]
       (d/run-delivery-loop!
-        web3
-        (assoc options :online-message online-message)))
+       web3
+       (assoc options :online-message online-message)))
     (doseq [pending-message pending-messages]
       (d/add-prepeared-pending-message! web3 pending-message))
     web3))
+
+(defn init-rtc!
+  [web3 adr]
+  (debug :init-rtc)
+  (f/add-rtc-filter!
+   web3
+   {:address adr
+    ;;:topics  [(.sha3 web3 "logtest(address,uint,string)")]
+    }
+   (fn [err res]
+     (debug "rtc-filter:" err "," (js->clj res) )
+     (debug "rtc-filter:slipt:"
+            (let [aryRes (map (fn[x] (str (clojure.string/join "" x)))
+                              (partition 64 (.split (h/normalize-hex (get (js->clj res) "data")) "")))]
+              (str aryRes ","
+                   (str "0x" (.substr (nth aryRes 0) 24)) "," ;;From
+                   (.toDecimal web3 (str "0x" (nth aryRes 1))) "," ;; Value
+                   (.toAscii web3 (str "0x" (nth aryRes 4))) ) ;; DATA(ASCII)
+              )
+            )
+     )))

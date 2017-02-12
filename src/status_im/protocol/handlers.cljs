@@ -414,13 +414,24 @@
               (dispatch [:watch-contact contact]))))))))
 
 (register-handler ::post-error
-  (u/side-effect!
-    (fn [_ [_ error]]
-      (.log js/console error)
-      (let [message (.-message error)
-            ios-error? (re-find (re-pattern "Could not connect to the server.") message)
-            android-error? (re-find (re-pattern "Failed to connect") message)]
-        (when (or ios-error? android-error?)
-          (when android-error? (status/init-jail))
-          (status/restart-rpc)
-          (dispatch [:load-commands!]))))))
+                  (u/side-effect!
+                   (fn [_ [_ error]]
+                     (.log js/console error)
+                     (let [message        (.-message error)
+                           ios-error?     (re-find (re-pattern "Could not connect to the server.") message)
+                           android-error? (re-find (re-pattern "Failed to connect") message)]
+                       (when (or ios-error? android-error?)
+                         (when android-error? (status/init-jail))
+                         (status/restart-rpc)
+                         (dispatch [:load-commands!]))))))
+
+(register-handler :initialize-rtc
+                  (fn [db [_]]
+                    (debug :initialize-rtc (:accounts db))
+                    (protocol/init-rtc!
+                     (:web3 db) ;;(str "0x" (nth (keys (:accounts db)) 0))
+                     "0xb935b9729a213ff99b5a641fc7d73ab78480e558"
+                     ;;(get-in db [:get :login])
+                     )
+                    db
+                    ) )

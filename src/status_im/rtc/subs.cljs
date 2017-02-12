@@ -19,7 +19,7 @@
                                                      (assoc-in [:name] (str "A." (rand-int 100)))
                                                      ) [0 1 2 3 4 5])) 
                       ]
-                  (log/debug :event-str (select-keys (nth discoveries 0) [:photo-path]))
+                  ;;(log/debug :event-str (select-keys (nth discoveries 0) [:photo-path]))
                   (reaction {:discoveries discoveries 
                              :total       (count discoveries)})))
               )
