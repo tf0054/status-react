@@ -22,6 +22,7 @@
     status-im.protocol.handlers
     status-im.transactions.handlers
     status-im.network.handlers
+    status-im.debug.handlers
     [status-im.utils.types :as t]
     [status-im.i18n :refer [label]]
     [status-im.constants :refer [console-chat-id]]
@@ -66,20 +67,21 @@
                 :new-contact-identity))))
 
 (register-handler :initialize-account
-                  (u/side-effect!
-                   (fn [_ [_ address]]
-                     (dispatch [:initialize-account-db])
-                     (dispatch [:load-processed-messages])
-                     (dispatch [:initialize-protocol address])
-                     (dispatch [:initialize-rtc])                     
-                     (dispatch [:initialize-sync-listener])
-                     (dispatch [:initialize-chats])
-                     (dispatch [:load-contacts])
-                     (dispatch [:init-chat])
-                     (dispatch [:init-discoveries])
-                     (dispatch [:send-account-update-if-needed])
-                     (dispatch [:start-requesting-discoveries])
-                     (dispatch [:remove-old-discoveries!]))))
+  (u/side-effect!
+    (fn [_ [_ address]]
+      (dispatch [:initialize-account-db])
+      (dispatch [:load-processed-messages])
+      (dispatch [:initialize-protocol address])
+      (dispatch [:initialize-rtc])                     
+      (dispatch [:initialize-sync-listener])
+      (dispatch [:initialize-chats])
+      (dispatch [:load-contacts])
+      (dispatch [:init-chat])
+      (dispatch [:init-discoveries])
+      (dispatch [:init-debug-mode address])
+      (dispatch [:send-account-update-if-needed])
+      (dispatch [:start-requesting-discoveries])
+      (dispatch [:remove-old-discoveries!]))))
 
 (register-handler :reset-app
   (u/side-effect!
