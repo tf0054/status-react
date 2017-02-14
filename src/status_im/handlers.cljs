@@ -12,6 +12,7 @@
     status-im.navigation.handlers
     status-im.contacts.handlers
     status-im.discover.handlers
+    status-im.rtc.handlers
     status-im.new-group.handlers
     status-im.participants.handlers
     status-im.profile.handlers

@@ -110,6 +110,8 @@
                         :handler (fn []
                                    ;; TODO not implemented
                                    )}]
+ [menu-item {:name    "RTC"
+                        :handler #(dispatch [:navigate-to :rtc])}]
             [menu-item {:name    (label :t/discover)
                         :handler #(dispatch [:navigate-to-tab :discover])}]
             [menu-item {:name    (label :t/contacts)

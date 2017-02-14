@@ -4,6 +4,7 @@
             status-im.chat.subs
             status-im.group-settings.subs
             status-im.discover.subs
+ status-im.rtc.subs
             status-im.contacts.subs
             status-im.new-group.subs
             status-im.participants.subs
