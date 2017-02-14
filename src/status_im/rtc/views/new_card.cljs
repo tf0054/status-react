@@ -57,8 +57,9 @@
 (defn toolbar-actions [new-contact-identity account error]  
   [{:image   {:source {:uri :icon_ok_blue}
               :style  icon-ok}
-    :handler #(when true
-                (on-add-card new-contact-identity))}])
+    :handler #(dispatch [:add-card])
+    ;;#(on-add-card new-contact-identity)
+    }])
 
 (defview contact-whisper-id-input [whisper-identity error]
   [current-account [:get-current-account]]
@@ -88,10 +89,12 @@
              :style            (get-in platform-specific [:component-styles :toolbar])
              :nav-action       (act/back #(dispatch [:navigate-back]))
              :title            "NEW CARD INPUT2"
-             :actions          (toolbar-actions new-contact-identity account error)}]
+             :actions          ;;#(dispatch [:add-card])
+             (toolbar-actions new-contact-identity account error)
+             }]
    [view st/form-container
     [contact-whisper-id-input new-contact-identity error]]
    [view st/address-explication-container
     [text {:style st/address-explication
            :font  :default}
-     (label :t/address-explication)]]])
+     "Message here"]]])
