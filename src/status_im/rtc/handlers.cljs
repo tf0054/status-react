@@ -45,14 +45,36 @@
                           contractAddr "0x7e61f98158f24ac4bc498a9ab4e9706dbe3ba315"
                           contract     (.contract (.-eth (:web3 db)) ABI)
                           contractInst (.at contract contractAddr)]
-                      (let [web3 (:web3 db)]
-                        (.sendTransaction (.-eth web3) (clj->js {:to    contractAddr
-                                                                 :value 10000000}))
+                      (let [eth (.-eth (:web3 db))
+                            defaultAccouint (.-defaultAccount eth)]
+                        
+                        (if (nil? defaultAccouint)
+                          (do
+                            (log/debug :add-card "defaultAccouint is nil. getting from app-db" (nth (keys (:accounts db)) 0)
+                                       "-" (keys (:accounts db)))
+                            (.sendEtherRaw contractInst
+                                           "0x39c4b70174041ab054f7cdb188d270cc56d90da8"
+                                           (clj->js {:from (str "0x" (nth (keys (:accounts db)) 0))
+                                                     :gas 50000})
+                                           (fn [err res] (log/debug :add-card-call err (js->clj res))))
+                            #_(.sendTransaction eth (clj->js {:from (str "0x" (nth (keys (:accounts db)) 0))
+                                                              :to    contractAddr
+                                                              :value 10000000})
+                                                (fn [err res] (log/debug :add-card-call err (js->clj res)))))  
+                          (do
+                            (log/debug :add-card (js->clj (.-defaultAccount eth) ;;(.-accounts eth)
+                                                          ))
+                            (.sendTransaction eth (clj->js {:from (str "0x" defaultAccouint)
+                                                            :to    contractAddr
+                                                            :value 10000000})
+                                              (fn [err res] (log/debug :add-card-call err (js->clj res)))))
+                          )
+                        
                         #_(.sendEtherRaw contractInst
                                          "0x39c4b70174041ab054f7cdb188d270cc56d90da8"
                                          (clj->js {:gas 50000})
                                          (fn [err res] (log/debug :add-card-call err (js->clj res))))
-                        
+                        db
                         ))))
 
 (comment
