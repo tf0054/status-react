@@ -18,6 +18,7 @@
             [status-im.qr-scanner.screen :refer [qr-scanner]]
             [status-im.discover.search-results :refer [discover-search-results]]
             [status-im.rtc.search-results :refer [rtc-discover]]
+            [status-im.rtc.views.new-card :refer [new-card]]
             [status-im.chat.screen :refer [chat]]
             [status-im.accounts.login.screen :refer [login]]
             [status-im.accounts.recover.screen :refer [recover]]
@@ -65,69 +66,70 @@
         modal-view      (subscribe [:get :modal])]
     (log/debug "Current account: " @account-id)
     (r/create-class
-      {:component-will-mount
-       (fn []
-         (let [o (orientation->keyword (.getInitialOrientation orientation))]
-           (dispatch [:set :orientation o]))
-         (.addOrientationListener
-           orientation
-           #(dispatch [:set :orientation (orientation->keyword %)]))
-         (.lockToPortrait orientation)
-         (.addListener keyboard
-                       "keyboardDidShow"
-                       (fn [e]
-                         (let [h (.. e -endCoordinates -height)]
-                           (when-not (= h @keyboard-height)
-                             (dispatch [:set :keyboard-height h])
-                             (dispatch [:set :keyboard-max-height h])))))
-         (.addListener keyboard
-                       "keyboardDidHide"
-                       #(when-not (= 0 @keyboard-height)
-                          (dispatch [:set :keyboard-height 0])))
-         (.hide splash-screen))
-       :component-will-unmount
-       (fn []
-         (.stop http-bridge))
-       :render
-       (fn []
-         (when @view-id
-           (let [current-view (validate-current-view @view-id @signed-up?)]
-             (let [component (case current-view
-                               :discover main-tabs
-                               :discover-search-results discover-search-results
-                               :rtc rtc-discover
-                               :add-participants new-participants
-                               :remove-participants remove-participants
-                               :chat-list main-tabs
-                               :new-group new-group
-                               :group-settings group-settings
-                               :contact-list main-tabs
-                               :contact-list-search-results contacts-search-results
-                               :group-contacts contact-list
-                               :new-contact new-contact
-                               :qr-scanner qr-scanner
-                               :chat chat
-                               :profile profile
-                               :profile-photo-capture profile-photo-capture
-                               :accounts accounts
-                               :login login
-                               :recover recover
-                               :my-profile my-profile)]
-               [view
-                {:flex 1}
-                [component]
-                (when @modal-view
-                  [view
-                   st/chat-modal
-                   [modal {:animation-type   :slide
-                           :transparent      false
-                           :on-request-close #(dispatch [:navigate-back])}
-                    (let [component (case @modal-view
-                                      :qr-scanner qr-scanner
-                                      :qr-code-view qr-code-view
-                                      :confirm confirm
-                                      :contact-list-modal contact-list)]
-                      [component])]])]))))})))
+     {:component-will-mount
+      (fn []
+        (let [o (orientation->keyword (.getInitialOrientation orientation))]
+          (dispatch [:set :orientation o]))
+        (.addOrientationListener
+         orientation
+         #(dispatch [:set :orientation (orientation->keyword %)]))
+        (.lockToPortrait orientation)
+        (.addListener keyboard
+                      "keyboardDidShow"
+                      (fn [e]
+                        (let [h (.. e -endCoordinates -height)]
+                          (when-not (= h @keyboard-height)
+                            (dispatch [:set :keyboard-height h])
+                            (dispatch [:set :keyboard-max-height h])))))
+        (.addListener keyboard
+                      "keyboardDidHide"
+                      #(when-not (= 0 @keyboard-height)
+                         (dispatch [:set :keyboard-height 0])))
+        (.hide splash-screen))
+      :component-will-unmount
+      (fn []
+        (.stop http-bridge))
+      :render
+      (fn []
+        (when @view-id
+          (let [current-view (validate-current-view @view-id @signed-up?)]
+            (let [component (case current-view
+                              :discover main-tabs
+                              :discover-search-results discover-search-results
+                              :rtc rtc-discover
+                              :rtc-new-card new-card      
+                              :add-participants new-participants
+                              :remove-participants remove-participants
+                              :chat-list main-tabs
+                              :new-group new-group
+                              :group-settings group-settings
+                              :contact-list main-tabs
+                              :contact-list-search-results contacts-search-results
+                              :group-contacts contact-list
+                              :new-contact new-contact
+                              :qr-scanner qr-scanner
+                              :chat chat
+                              :profile profile
+                              :profile-photo-capture profile-photo-capture
+                              :accounts accounts
+                              :login login
+                              :recover recover
+                              :my-profile my-profile)]
+              [view
+               {:flex 1}
+               [component]
+               (when @modal-view
+                 [view
+                  st/chat-modal
+                  [modal {:animation-type   :slide
+                          :transparent      false
+                          :on-request-close #(dispatch [:navigate-back])}
+                   (let [component (case @modal-view
+                                     :qr-scanner qr-scanner
+                                     :qr-code-view qr-code-view
+                                     :confirm confirm
+                                     :contact-list-modal contact-list)]
+                     [component])]])]))))})))
 
 (defn init []
   (status/call-module status/init-jail)

@@ -7,7 +7,8 @@
             [status-im.data-store.discover :as discoveries]
             [status-im.utils.handlers :as u]
             [status-im.utils.datetime :as time]
-            [status-im.utils.random :as random]))
+            [status-im.utils.random :as random]
+            [taoensso.timbre :as log]))
 
 (def request-discoveries-interval-s 600)
 
@@ -32,6 +33,13 @@
                                (map (fn [{:keys [message-id] :as discover}]
                                       [message-id discover]))
                                (into {})))))
+
+
+(register-handler :add-card
+                  (log/debug :add-card)
+                  ;;add-new-contacts
+                  )
+
 (comment
   (register-handler :broadcast-status
                     (u/side-effect!
