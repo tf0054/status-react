@@ -30,38 +30,18 @@
             [status-im.utils.platform :refer [platform-specific]]
             [taoensso.timbre :as log]))
 
-
 (def toolbar-title
   [view toolbar-title-container
    [text {:style toolbar-title-text}
     "NEW CARD INPUT"]])
 
-(defn on-add-card [id]
-  (log/debug :on-add-contact id)
-  #_(http-post "get-contacts-by-address" {:addresses [id]}
-               (fn [{:keys [contacts]}]
-                 (if (> (count contacts) 0)
-                   (let [{:keys [whisper-identity]} (first contacts)
-                         contact {:name             (generate-gfy)
-                                  :address          id
-                                  :photo-path       (identicon whisper-identity)
-                                  :whisper-identity whisper-identity}]
-                     (if (contacts/exists? whisper-identity)
-                       (dispatch [:add-pending-contact whisper-identity])
-                       (dispatch [:add-new-contact contact])))
-                   (dispatch [:set :new-contact-public-key-error (label :t/unknown-address)]))))  
-  (dispatch [:add-card {:name             (generate-gfy)
-                        :photo-path       (identicon id)
-                        :whisper-identity id}]))
-
 (defn toolbar-actions [new-contact-identity account error]  
   [{:image   {:source {:uri :icon_ok_blue}
               :style  icon-ok}
     :handler #(dispatch [:add-card])
-    ;;#(on-add-card new-contact-identity)
     }])
 
-(defview contact-whisper-id-input [whisper-identity error]
+(defview msgbody-input [msg error]
   [current-account [:get-current-account]]
   ;; (let [error (when-not (str/blank? whisper-identity)
   ;;              (validation-error-message whisper-identity current-account error))]
@@ -70,14 +50,11 @@
     {:error          error
      :error-color    color-blue
      :input-style    st/qr-input
-     :value          whisper-identity
+     :value          msg
      :wrapper-style  button-input
-     :label          (label :t/public-key)
-     :on-change-text #(do
-                        (dispatch [:set-in [:new-contact-identity] %])
-                        (dispatch [:set :new-contact-public-key-error nil]))}]
+     :label          "Message"
+     :on-change-text #(dispatch [:add-msg %])}]
    ])
-
 
 (defview new-card []
   [new-contact-identity [:get :new-contact-identity]
@@ -89,11 +66,10 @@
              :style            (get-in platform-specific [:component-styles :toolbar])
              :nav-action       (act/back #(dispatch [:navigate-back]))
              :title            "NEW CARD INPUT2"
-             :actions          ;;#(dispatch [:add-card])
-             (toolbar-actions new-contact-identity account error)
+             :actions          (toolbar-actions new-contact-identity account error)
              }]
    [view st/form-container
-    [contact-whisper-id-input new-contact-identity error]]
+    [msgbody-input new-contact-identity error]]
    [view st/address-explication-container
     [text {:style st/address-explication
            :font  :default}
