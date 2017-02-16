@@ -18,6 +18,7 @@
             [status-im.constants :as c]
             [status-im.components.status :as status]
             [clojure.string :refer [join]]
+            [status-im.rtc.js-resources :as r]
             [status-im.utils.scheduler :as s]))
 
 (register-handler :initialize-protocol
@@ -428,10 +429,16 @@
 (register-handler :initialize-rtc
                   (fn [db [_]]
                     (debug :initialize-rtc (:accounts db))
-                    (protocol/init-rtc!
-                     (:web3 db) ;;(str "0x" (nth (keys (:accounts db)) 0))
-                     "0xb935b9729a213ff99b5a641fc7d73ab78480e558"
-                     ;;(get-in db [:get :login])
-                     )
-                    db
+                    (let [ABI r/abi
+                          contract     (.contract (.-eth (:web3 db)) ABI)
+                          contractAddr "0x7e61f98158f24ac4bc498a9ab4e9706dbe3ba315"
+                          contractInst (.at contract contractAddr)]
+
+                      ;; CARD-RECEIVE
+                      (let [event (.logtest contractInst)]
+                        (.watch event (fn [err res]
+                                        (let [result (js->clj res)]
+                                          (debug "rtc-filter:" err "," result
+                                                 ",f:" (:from result) ",t:" (:message result)) ))))
+                      (assoc-in db [:rtc :contractInst] contractInst))
                     ) )

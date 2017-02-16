@@ -110,6 +110,7 @@
       (d/add-prepeared-pending-message! web3 pending-message))
     web3))
 
+;; UNUSED
 (defn init-rtc!
   [web3 adr]
   (debug :init-rtc)

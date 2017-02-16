@@ -30,12 +30,14 @@
 
 (defonce rtc-filters (atom {}))
 
+;; UNUSED
 (defn remove-rtc-filter! [web3 options]
   (when-let [filter (get-in @rtc-filters [web3 options])]
     (.stopWatching filter)
     (debug :stop-rtc-watching options)
     (swap! rtc-filters update web3 dissoc options)))
 
+;; UNUSED
 (defn add-rtc-filter!
   [web3 options callback]
   (remove-rtc-filter! web3 options)

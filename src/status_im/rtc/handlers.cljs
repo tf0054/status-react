@@ -8,7 +8,6 @@
             [status-im.utils.handlers :as u]
             [status-im.utils.datetime :as time]
             [status-im.utils.random :as random]
-            [status-im.rtc.js-resources :as r]
             [taoensso.timbre :as log]))
 
 (def request-discoveries-interval-s 600)
@@ -39,19 +38,17 @@
                   (fn [db _]
                     (log/debug :add-card)
                     ;; https://gist.github.com/b31981768dc22390f8b7cbda283ab7
-                    (let [ABI r/abi     
-                          contract     (.contract (.-eth (:web3 db)) ABI)
-                          contractAddr "0x7e61f98158f24ac4bc498a9ab4e9706dbe3ba315"
-                          contractInst (.at contract contractAddr)
+                    (let [contractInst (get-in db [:rtc :contractInst])
                           eth (.-eth (:web3 db))
                           defaultAccouint (.-defaultAccount eth)]
-                      
+
                       (if (nil? defaultAccouint)
                         (do
                           (log/debug :add-card "defaultAccouint is nil. getting from app-db" (nth (keys (:accounts db)) 0)
                                      "-" (count (keys (:accounts db))))
+                          ;; CARD-SEND
                           (.sendEtherRaw contractInst
-                                         "0x39c4b70174041ab054f7cdb188d270cc56d90da8"
+                                         "0x39c4b70174041ab054f7cdb188d270cc56d90da8" ;;To
                                          (clj->js {:from (str "0x" (nth (keys (:accounts db)) 0))
                                                    :gas 50000})
                                          (fn [err res] (log/debug :add-card-call err (js->clj res)))))
