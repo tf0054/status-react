@@ -25,5 +25,5 @@
 
 (register-sub :get-rtc-msg
               (fn [db [_]]
-                (reaction (get-in db [:rtc :msg]))
+                (reaction (get-in db [:rtc :message]))
                 ))

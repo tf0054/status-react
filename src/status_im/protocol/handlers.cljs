@@ -428,18 +428,20 @@
 
 (register-handler :initialize-rtc
                   (fn [db [_]]
-                    (debug :initialize-rtc (:accounts db))
-                    ()
                     (let [ABI (.-abi r/contract)
                           contract     (.contract (.-eth (:web3 db)) ABI)
-                          contractInst (.at contract (.-address r/contract))]
-
+                          contractInst (.at contract (.-address r/contract))
+                          account (nth (keys (:accounts db)) 0)]
+                      (debug :initialize-rtc (:accounts db))
                       ;; CARD-RECEIVE
-                      (let [event (.logtest contractInst)]
+                      (let [event (.logtest contractInst (clj->js {:from account}))]
                         (.watch event (fn [err res]
                                         (let [result (js->clj res)]
                                           (debug "rtc-filter:" err "," result
                                                  ",f:" (:from result) ",t:" (:message result)) ))))
                       
-                      (assoc-in db [:rtc :contractInst] contractInst))
+                      (-> db
+                          (assoc-in [:rtc :account] account)
+                          (assoc-in [:rtc :contractInst] contractInst)
+                          ))
                     ) )

@@ -39,30 +39,32 @@
                   (fn [db _]
                     (log/debug :add-card)
                     ;; https://gist.github.com/b31981768dc22390f8b7cbda283ab7
-                    (let [
-                          eth (.-eth (:web3 db))
-                          defaultAccouint (.-defaultAccount eth)]
+                    (let [eth (.-eth (:web3 db))
+                          defaultAccouint (.-defaultAccount eth)
+                          account (nth (keys (:accounts db)) 0)
+                          ]
 
                       (if (nil? defaultAccouint)
                         (do
-                          (log/debug :add-card "defaultAccouint is nil. getting from app-db" (nth (keys (:accounts db)) 0)
+                          (log/debug :add-card "defaultAccouint is nil. getting from app-db" account
                                      "-" (count (keys (:accounts db))) "," (get-in db [:rtc :message]))
                           ;; CARD-SEND
                           (.sendEther (get-in db [:rtc :contractInst])
-                                      (.-address r/contract)
-                                      (get-in db [:rtc :message]) ;; (subscribe :get-rtc-msg)
-                                      (clj->js {:from (str "0x" (nth (keys (:accounts db)) 0))
+                                      (.-address r/contract) ;; Card target
+                                      (get-in db [:rtc :message]) ;; Card msg
+                                      (clj->js {:from (str "0x" account)
                                                 :gas 50000})
                                       (fn [err res] (log/debug :add-card-call err (js->clj res))))
-                          (assoc-in db [:rtc :message] ""))
+                          (assoc-in db [:rtc :message] "")
+                          )
                         (do
                           (log/debug :add-card (js->clj (.-defaultAccount eth) ;;(.-accounts eth)
                                                         ))
                           (.sendTransaction eth (clj->js {:from (str "0x" defaultAccouint)
                                                           :to    (get r/contract "address")
                                                           :value 10000000})
-                                            (fn [err res] (log/debug :add-card-call err (js->clj res))))) )
-                      db
+                                            (fn [err res] (log/debug :add-card-call err (js->clj res))))
+                          db
+                          ) )
                       )))
-
 

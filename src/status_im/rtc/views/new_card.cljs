@@ -35,14 +35,15 @@
    [text {:style toolbar-title-text}
     "NEW CARD INPUT"]])
 
-(defn toolbar-actions [new-contact-identity account error]  
+(defn toolbar-actions [account error]  
   [{:image   {:source {:uri :icon_ok_blue}
               :style  icon-ok}
-    :handler #(dispatch [:add-card])
+    :handler #(dispatch [:add-card account])
     }])
 
-(defview msgbody-input [msg error]
-  [current-account [:get-current-account]]
+(defview msgbody-input [error]
+  [msg [:get-rtc-msg]
+   current-account [:get-current-account]]
   ;; (let [error (when-not (str/blank? whisper-identity)
   ;;              (validation-error-message whisper-identity current-account error))]
   [view button-input-container
@@ -57,7 +58,7 @@
    ])
 
 (defview new-card []
-  [new-contact-identity [:get :new-contact-identity]
+  [;; new-msg[:get-rtc-msg]
    error [:get :new-contact-public-key-error]
    account [:get-current-account]]
   [view st/contact-form-container
@@ -66,11 +67,11 @@
              :style            (get-in platform-specific [:component-styles :toolbar])
              :nav-action       (act/back #(dispatch [:navigate-back]))
              :title            "NEW CARD INPUT2"
-             :actions          (toolbar-actions new-contact-identity account error)
+             :actions          (toolbar-actions account error)
              }]
    [view st/form-container
-    [msgbody-input new-contact-identity error]]
+    [msgbody-input error]]
    [view st/address-explication-container
     [text {:style st/address-explication
            :font  :default}
-     "Message here"]]])
+     "Here you can add some explanation"]]])
