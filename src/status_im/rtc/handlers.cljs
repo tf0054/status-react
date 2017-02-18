@@ -29,6 +29,14 @@
                                       [message-id discover]))
                                (into {})))))
 
+(register-handler :set-card-to
+                  (fn [db [_ name address]]
+                    (log/debug :set-card-to name address)
+                    (-> db
+                        (assoc-in [:rtc :name] name)
+                        (assoc-in [:rtc :address] address))
+                    ))
+
 (register-handler :add-msg
                   (fn [db [_ msg]]
                     (log/debug :add-msg msg)
@@ -53,10 +61,10 @@
                       (if (nil? defaultAccouint)
                         (do
                           (log/debug :add-card "defaultAccouint is nil. getting from app-db" account
-                                     "-" (count (keys (:accounts db))) "," (get-in db [:rtc :message]))
+                                     "-" (count (keys (:accounts db))) "," (get-in db [:rtc :message]) "->" (get-in db [:rtc :address]))
                           ;; CARD-SEND
                           (.sendEther (get-in db [:rtc :contractInst])
-                                      (.-address r/contract) ;; Card target
+                                      (str "0x" (get-in db [:rtc :address])) ;; Card target
                                       (get-in db [:rtc :message]) ;; Card msg
                                       (clj->js {:from (str "0x" account)
                                                 :gas 50000})
@@ -71,8 +79,8 @@
                         (do
                           (log/debug :add-card (js->clj (.-defaultAccount eth) ;;(.-accounts eth)
                                                         ))
-                          (.sendTransaction eth (clj->js {:from (str "0x" defaultAccouint)
-                                                          :to    (get r/contract "address")
+                          (.sendTransaction eth (clj->js {:from  (str "0x" defaultAccouint)
+                                                          :to    (get-in db [:rtc :address])
                                                           :value 10000000})
                                             (fn [err res] (log/debug :add-card-call err (js->clj res))))
                           ::db

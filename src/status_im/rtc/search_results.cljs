@@ -37,7 +37,7 @@
    [action-button-item
     {:title       "NEW CARD"
      :buttonColor :#9b59b6
-     :onPress     #(dispatch [:navigate-to :rtc-new-card])}
+     :onPress     #(dispatch [:navigate-to :rtc-contact])}
     [ion-icon {:name  :md-create
                :style create-icon}]]])
 
