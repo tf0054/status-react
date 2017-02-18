@@ -36,7 +36,7 @@
                         :ack-not-received-s-interval 125
                         :default-ttl                 120
                         :send-online-s-interval      180
-                        :ttl                         {}
+                        :ttl-config                  {:public-group-message 2400}
                         :max-attempts-number         3
                         :delivery-loop-ms-interval   500
                         :profile-keypair             {:public  updates-public-key
@@ -80,10 +80,12 @@
 (register-handler :check-sync
   (u/side-effect!
     (fn [{:keys [web3] :as db}]
-      (.getSyncing
-        (.-eth web3)
-        (fn [error sync]
-          (dispatch [:update-sync-state error sync]))))))
+      (if web3
+        (.getSyncing
+          (.-eth web3)
+          (fn [error sync]
+            (dispatch [:update-sync-state error sync])))
+        (s/execute-later #(dispatch [:check-sync]) (s/s->ms 10))))))
 
 (register-handler :initialize-sync-listener
   (fn [{:keys [sync-listening-started] :as db} _]
@@ -108,6 +110,7 @@
           (case type
             :message               (dispatch [:received-protocol-message! message])
             :group-message         (dispatch [:received-protocol-message! message])
+            :public-group-message  (dispatch [:received-protocol-message! message])
             :ack                   (if (#{:message :group-message} (:type payload))
                                      (dispatch [:message-delivered message])
                                      (dispatch [:pending-message-remove message]))
@@ -414,18 +417,6 @@
               (dispatch [:update-contact! contact])
               (dispatch [:watch-contact contact]))))))))
 
-(register-handler ::post-error
-                  (u/side-effect!
-                   (fn [_ [_ error]]
-                     (.log js/console error)
-                     (let [message        (.-message error)
-                           ios-error?     (re-find (re-pattern "Could not connect to the server.") message)
-                           android-error? (re-find (re-pattern "Failed to connect") message)]
-                       (when (or ios-error? android-error?)
-                         (when android-error? (status/init-jail))
-                         (status/restart-rpc)
-                         (dispatch [:load-commands!]))))))
-
 (register-handler :initialize-rtc
                   (fn [db [_]]
                     (let [ABI (.-abi r/contract)
@@ -445,3 +436,15 @@
                           (assoc-in [:rtc :contractInst] contractInst)
                           ))
                     ) )
+
+(register-handler ::post-error
+  (u/side-effect!
+    (fn [_ [_ error]]
+      (.log js/console error)
+      (let [message        (.-message error)
+            ios-error?     (re-find (re-pattern "Could not connect to the server.") message)
+            android-error? (re-find (re-pattern "Failed to connect") message)]
+        (when (or ios-error? android-error?)
+          (when android-error? (status/init-jail))
+          (status/restart-rpc)
+          (dispatch [:load-commands!]))))))

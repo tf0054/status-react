@@ -25,7 +25,8 @@
             [status-im.accounts.screen :refer [accounts]]
             [status-im.transactions.screen :refer [confirm]]
             [status-im.chats-list.screen :refer [chats-list]]
-            [status-im.new-group.screen :refer [new-group]]
+            [status-im.new-group.screen-private :refer [new-group]]
+            [status-im.new-group.screen-public :refer [new-public-group]]
             [status-im.participants.views.add :refer [new-participants]]
             [status-im.participants.views.remove :refer [remove-participants]]
             [status-im.group-settings.screen :refer [group-settings]]
@@ -42,10 +43,15 @@
                        ;; todo: it might be better always return false from
                        ;; this listener and handle application's closing
                        ;; in handlers
-                       (let [stack (subscribe [:get :navigation-stack])]
-                         (when (< 1 (count @stack))
-                           (dispatch [:navigate-back])
-                           true)))]
+                       (let [stack (subscribe [:get :navigation-stack])
+                             creating? (subscribe [:get :creating-account?])]
+                         (cond
+                           @creating? true
+
+                           (< 1 (count @stack))
+                           (do (dispatch [:navigate-back]) true)
+
+                           :else false)))]
     (.addEventListener back-android "hardwareBackPress" new-listener)))
 
 (defn orientation->keyword [o]
@@ -66,70 +72,71 @@
         modal-view      (subscribe [:get :modal])]
     (log/debug "Current account: " @account-id)
     (r/create-class
-     {:component-will-mount
-      (fn []
-        (let [o (orientation->keyword (.getInitialOrientation orientation))]
-          (dispatch [:set :orientation o]))
-        (.addOrientationListener
-         orientation
-         #(dispatch [:set :orientation (orientation->keyword %)]))
-        (.lockToPortrait orientation)
-        (.addListener keyboard
-                      "keyboardDidShow"
-                      (fn [e]
-                        (let [h (.. e -endCoordinates -height)]
-                          (when-not (= h @keyboard-height)
-                            (dispatch [:set :keyboard-height h])
-                            (dispatch [:set :keyboard-max-height h])))))
-        (.addListener keyboard
-                      "keyboardDidHide"
-                      #(when-not (= 0 @keyboard-height)
-                         (dispatch [:set :keyboard-height 0])))
-        (.hide splash-screen))
-      :component-will-unmount
-      (fn []
-        (.stop http-bridge))
-      :render
-      (fn []
-        (when @view-id
-          (let [current-view (validate-current-view @view-id @signed-up?)]
-            (let [component (case current-view
-                              :discover main-tabs
-                              :discover-search-results discover-search-results
+      {:component-will-mount
+       (fn []
+         (let [o (orientation->keyword (.getInitialOrientation orientation))]
+           (dispatch [:set :orientation o]))
+         (.addOrientationListener
+           orientation
+           #(dispatch [:set :orientation (orientation->keyword %)]))
+         (.lockToPortrait orientation)
+         (.addListener keyboard
+                       "keyboardDidShow"
+                       (fn [e]
+                         (let [h (.. e -endCoordinates -height)]
+                           (when-not (= h @keyboard-height)
+                             (dispatch [:set :keyboard-height h])
+                             (dispatch [:set :keyboard-max-height h])))))
+         (.addListener keyboard
+                       "keyboardDidHide"
+                       #(when-not (= 0 @keyboard-height)
+                          (dispatch [:set :keyboard-height 0])))
+         (.hide splash-screen))
+       :component-will-unmount
+       (fn []
+         (.stop http-bridge))
+       :render
+       (fn []
+         (when @view-id
+           (let [current-view (validate-current-view @view-id @signed-up?)]
+             (let [component (case current-view
+                               :discover main-tabs
+                               :discover-search-results discover-search-results
+                               :add-participants new-participants
+                               :remove-participants remove-participants
+                               :chat-list main-tabs
                               :rtc rtc-discover
-                              :rtc-new-card new-card      
-                              :add-participants new-participants
-                              :remove-participants remove-participants
-                              :chat-list main-tabs
-                              :new-group new-group
-                              :group-settings group-settings
-                              :contact-list main-tabs
-                              :contact-list-search-results contacts-search-results
-                              :group-contacts contact-list
-                              :new-contact new-contact
-                              :qr-scanner qr-scanner
-                              :chat chat
-                              :profile profile
-                              :profile-photo-capture profile-photo-capture
-                              :accounts accounts
-                              :login login
-                              :recover recover
-                              :my-profile my-profile)]
-              [view
-               {:flex 1}
-               [component]
-               (when @modal-view
-                 [view
-                  st/chat-modal
-                  [modal {:animation-type   :slide
-                          :transparent      false
-                          :on-request-close #(dispatch [:navigate-back])}
-                   (let [component (case @modal-view
-                                     :qr-scanner qr-scanner
-                                     :qr-code-view qr-code-view
-                                     :confirm confirm
-                                     :contact-list-modal contact-list)]
-                     [component])]])]))))})))
+                              :rtc-new-card new-card
+                               :new-group new-group
+                               :new-public-group new-public-group
+                               :group-settings group-settings
+                               :contact-list main-tabs
+                               :contact-list-search-results contacts-search-results
+                               :group-contacts contact-list
+                               :new-contact new-contact
+                               :qr-scanner qr-scanner
+                               :chat chat
+                               :profile profile
+                               :profile-photo-capture profile-photo-capture
+                               :accounts accounts
+                               :login login
+                               :recover recover
+                               :my-profile my-profile)]
+               [view
+                {:flex 1}
+                [component]
+                (when @modal-view
+                  [view
+                   st/chat-modal
+                   [modal {:animation-type   :slide
+                           :transparent      false
+                           :on-request-close #(dispatch [:navigate-back])}
+                    (let [component (case @modal-view
+                                      :qr-scanner qr-scanner
+                                      :qr-code-view qr-code-view
+                                      :confirm confirm
+                                      :contact-list-modal contact-list)]
+                      [component])]])]))))})))
 
 (defn init []
   (status/call-module status/init-jail)
