@@ -423,9 +423,9 @@
                           contract     (.contract (.-eth (:web3 db)) ABI)
                           contractInst (.at contract (.-address r/contract))
                           account (nth (keys (:accounts db)) 0)]
-                      (debug :initialize-rtc (:accounts db))
+                      (debug :initialize-rtc (:accounts db) "," (.-address r/contract))
                       ;; CARD-RECEIVE
-                      (let [event (.logtest contractInst (clj->js {:from account}))]
+                      (let [event (.logtest contractInst (clj->js {:to account}))]
                         (.watch event (fn [err res]
                                         (let [result (js->clj res)]
                                           (debug "rtc-filter:" err "," result

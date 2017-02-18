@@ -35,6 +35,12 @@
                     (assoc-in db [:rtc :message] msg)
                     ))
 
+(register-handler :remove-msg
+                  (fn [db _]
+                    (log/debug :remove-msg)
+                    (assoc-in db [:rtc :message] "")
+                    ))
+
 (register-handler :add-card
                   (fn [db _]
                     (log/debug :add-card)
@@ -54,8 +60,13 @@
                                       (get-in db [:rtc :message]) ;; Card msg
                                       (clj->js {:from (str "0x" account)
                                                 :gas 50000})
-                                      (fn [err res] (log/debug :add-card-call err (js->clj res))))
-                          (assoc-in db [:rtc :message] "")
+                                      (fn [err res]
+                                        (log/debug :add-card-call err (js->clj res))
+                                        (if (nil? err)
+                                          (dispatch [:navigate-back])
+                                          (log/debug :add-card-call "backed") )
+                                        ))
+                          ;;(assoc-in db [:rtc :message] "")
                           )
                         (do
                           (log/debug :add-card (js->clj (.-defaultAccount eth) ;;(.-accounts eth)
@@ -64,7 +75,8 @@
                                                           :to    (get r/contract "address")
                                                           :value 10000000})
                                             (fn [err res] (log/debug :add-card-call err (js->clj res))))
-                          db
+                          ::db
                           ) )
+                      db
                       )))
 

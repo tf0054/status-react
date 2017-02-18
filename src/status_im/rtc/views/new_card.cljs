@@ -38,7 +38,8 @@
 (defn toolbar-actions [account error]  
   [{:image   {:source {:uri :icon_ok_blue}
               :style  icon-ok}
-    :handler #(dispatch [:add-card account])
+    :handler #(do (dispatch [:add-card account])
+                  (dispatch [:remove-msg]))
     }])
 
 (defview msgbody-input [error]
@@ -58,8 +59,7 @@
    ])
 
 (defview new-card []
-  [;; new-msg[:get-rtc-msg]
-   error [:get :new-contact-public-key-error]
+  [error [:get :new-contact-public-key-error]
    account [:get-current-account]]
   [view st/contact-form-container
    [status-bar]
