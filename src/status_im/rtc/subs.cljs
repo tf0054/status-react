@@ -7,23 +7,16 @@
 
 (register-sub :get-rtc-discoveries
               (fn [db [_]]
-                ;;(do (http-post "https://api.github.com" "/gists" @db js/console))
                 
-                (let [;;disc (reaction (:discoveries @db))
-                      discoveries (into [] (map #(-> {:photo-path r/photo} ;;(select-keys (nth discoveries 0) [:photo-path])
-                                                     (assoc-in [:message-id] (rand-int 10000))
-                                                     (assoc-in [:whisper-id] "A")
-                                                     (assoc-in [:status] (str "STR." % "." (rand-int 10000)))
-                                                     (assoc-in [:public-key] "A")
-                                                     (assoc-in [:name] (str "A." (rand-int 100)))
-                                                     ) [0 1 2 3 4 5])) 
-                      ]
-                  ;;(log/debug :event-str (select-keys (nth discoveries 0) [:photo-path]))
-                  (reaction {:discoveries discoveries 
-                             :total       (count discoveries)})))
-              )
+                ;;(do (http-post "https://api.github.com" "/gists" @db js/console))
+                (let [discoveries (get-in @db [:rtc :discoveries])]
+                  (log/debug "get-rtc-discoveries" (count (get-in @db [:rtc :discoveries])) (:rtc @db))
+                  (reaction {:discoveries discoveries
+                             :total discoveries})
+                  )
+                ))
 
 (register-sub :get-rtc-msg
               (fn [db [_]]
-                (reaction (get-in db [:rtc :message]))
+                (reaction (get-in @db [:rtc :message]))
                 ))

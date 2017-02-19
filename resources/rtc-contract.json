@@ -1,4 +1,4 @@
-{"address":"0x88e17a657d6a676758605fadfecc265c685dadec",
+{"address":"0xd812c9a8053e209d8f236b6137b11268bba60a37",
  "abi":
-[{"constant":false,"inputs":[{"name":"x","type":"address"}],"name":"setStatus","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"x","type":"address"},{"name":"msg","type":"string"}],"name":"sendEther","outputs":[],"payable":false,"type":"function"},{"payable":true,"type":"fallback"},{"anonymous":false,"inputs":[{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"},{"indexed":false,"name":"message","type":"string"}],"name":"logtest","type":"event"}]
+ [{"constant":false,"inputs":[{"name":"x","type":"address"}],"name":"setStatus","outputs":[],"payable":false,"type":"function"},{"constant":false,"inputs":[{"name":"x","type":"address"},{"name":"mesg","type":"string"}],"name":"sendEther","outputs":[],"payable":false,"type":"function"},{"payable":true,"type":"fallback"},{"anonymous":false,"inputs":[{"indexed":false,"name":"to","type":"address"},{"indexed":false,"name":"from","type":"address"},{"indexed":false,"name":"value","type":"uint256"},{"indexed":false,"name":"message","type":"string"}],"name":"logtest","type":"event"}]
 }
