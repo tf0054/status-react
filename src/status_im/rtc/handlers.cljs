@@ -5,11 +5,38 @@
             [status-im.protocol.core :as protocol]
             [status-im.navigation.handlers :as nav]
             [status-im.data-store.discover :as discoveries]
-            [status-im.utils.handlers :as u]
             [status-im.utils.datetime :as time]
             [status-im.utils.random :as random]
             [status-im.rtc.js-resources :as r]
+            [status-im.utils.utils :refer [http-get]]
+            [status-im.utils.types :refer [json->clj]]
             [taoensso.timbre :as log]))
+
+(defn public-key->address [public-key] ;; just copied from contacts/handlers.cljs
+  (let [length         (count public-key)
+        normalized-key (case length
+                         132 (subs public-key 4)
+                         130 (subs public-key 2)
+                         128 public-key
+                         nil)]
+    (when normalized-key
+      (subs (.sha3 js/Web3.prototype normalized-key #js {:encoding "hex"}) 26))))
+
+(defn add-contacts [{:keys [chats]} x]
+  (doseq [[id {:keys [name photo-path public-key add-chat?
+                      dapp? dapp-url dapp-hash]}] x]
+    (let [id' (clojure.core/name id)]
+      (when-not (chats id')
+        (when add-chat?
+          (dispatch [:add-chat id' {:name (:en name)}]))
+        (dispatch [:add-contacts [{:whisper-identity id'
+                                   :address          (public-key->address id')
+                                   :name             (:en name)
+                                   :photo-path       photo-path
+                                   :public-key       public-key
+                                   :dapp?            dapp?
+                                   :dapp-url         (:en dapp-url)
+                                   :dapp-hash        dapp-hash}]])))))
 
 (register-handler :initialize-rtc ;; called from src/status-im/handlers.cljs
                   (fn [db [_]]
@@ -35,6 +62,14 @@
                                                            )
                                                        ])
                                             )))
+                      ;; GETTING CONTACTS FOR RTC
+                      (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/8383aaa6e00aabe97432ae13ada0c25f1444cb15/contacts.json"
+                                #(let [x (json->clj %)]
+                                   (add-contacts db x)
+                                   ;;(log/debug "Contacts-get-success" x)
+                                   )
+                                #(log/debug "Contacts-get-error" ))
+                      
                       (-> db
                           (assoc-in [:rtc :account] account)
                           (assoc-in [:rtc :contractInst] contractInst)
