@@ -20,7 +20,7 @@
                                                         action-button-item]]
             [status-im.components.styles :refer [color-blue
                                                  create-icon]]
-            [status-im.rtc.views.discover-list-item :refer [discover-list-item]]
+            [status-im.rtc.views.list-item :refer [rtc-list-item]]
             [status-im.rtc.views.popular-list :refer [discover-popular-list]]
             [status-im.utils.platform :refer [platform-specific]]
             [status-im.i18n :refer [label]]
@@ -72,7 +72,7 @@
                             :margin-top     55}
                            {:keyboardShouldPersistTaps true
                             :bounces                   false})
-        (for [name [0 1 2 3 4 5]]
+        (for [name [0]]
           ^{:key (str "list-rtc-" name)}
           [discover-popular-list {:tag name}]) ]
        )

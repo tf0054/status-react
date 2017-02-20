@@ -18,7 +18,6 @@
             [status-im.constants :as c]
             [status-im.components.status :as status]
             [clojure.string :refer [join]]
-            [status-im.rtc.js-resources :as r]
             [status-im.utils.scheduler :as s]))
 
 (register-handler :initialize-protocol
@@ -417,54 +416,14 @@
               (dispatch [:update-contact! contact])
               (dispatch [:watch-contact contact]))))))))
 
-(register-handler :initialize-rtc
-                  (fn [db [_]]
-                    (let [ABI (.-abi r/contract)
-                          contract     (.contract (.-eth (:web3 db)) ABI)
-                          contractInst (.at contract (.-address r/contract))
-                          account (nth (keys (:accounts db)) 0)]
-                      (debug :initialize-rtc (:accounts db) "," (.-address r/contract))
-                      ;; CARD-RECEIVE
-                      (let [event (.logtest contractInst (clj->js {:to account}))]
-                        (.watch event (fn [err res]
-                                        (let [result_ (js->clj res :keywordize-keys true)
-                                              result (:args result_)]
-                                          (debug "rtc-filter:" err "," result
-                                                 ",t:" (:from result) "-" (:to result)
-                                                 ",m:" (:message result))
-                                          (dispatch [:rtc-receive-card
-                                                     (-> {:photo-path r/photo} ;FAKE
-                                                         (assoc-in [:message-id] (rand-int 10000)) ;FAKE
-                                                         (assoc-in [:whisper-id] "A") ;FAKE
-                                                         (assoc-in [:public-key] "A") ;FAKE
-                                                         (assoc-in [:status] (str (:message result) "." (rand-int 10000)))
-                                                         (assoc-in [:name] (str (:from result) "." (rand-int 100)))
-                                                         )
-                                                     ])
-                                          ))))
-                      (-> db
-                          (assoc-in [:rtc :account] account)
-                          (assoc-in [:rtc :contractInst] contractInst)
-                          ))
-                    ) )
-
-(register-handler :rtc-receive-card
-                  (fn [db [_ x]]
-                    (debug :rtc-receive-card x "," (get-in db [:rtc :discoveries]))
-                    (assoc-in db [:rtc :discoveries]
-                              (if (nil? (get-in db [:rtc :discoveries]))
-                                [x]
-                                (conj (get-in db [:rtc :discoveries]) x) ))
-                    ))
-
 (register-handler ::post-error
-                  (u/side-effect!
-                   (fn [_ [_ error]]
-                     (.log js/console error)
-                     (let [message        (.-message error)
-                           ios-error?     (re-find (re-pattern "Could not connect to the server.") message)
-                           android-error? (re-find (re-pattern "Failed to connect") message)]
-                       (when (or ios-error? android-error?)
-                         (when android-error? (status/init-jail))
-                         (status/restart-rpc)
-                         (dispatch [:load-commands!]))))))
+  (u/side-effect!
+    (fn [_ [_ error]]
+      (.log js/console error)
+      (let [message        (.-message error)
+            ios-error?     (re-find (re-pattern "Could not connect to the server.") message)
+            android-error? (re-find (re-pattern "Failed to connect") message)]
+        (when (or ios-error? android-error?)
+          (when android-error? (status/init-jail))
+          (status/restart-rpc)
+          (dispatch [:load-commands!]))))))

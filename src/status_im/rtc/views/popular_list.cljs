@@ -9,7 +9,7 @@
                                        text]]
    [status-im.rtc.styles :as st]
    [status-im.utils.listview :refer [to-datasource]]
-   [status-im.rtc.views.discover-list-item :refer [discover-list-item]]
+   [status-im.rtc.views.list-item :refer [rtc-list-item]]
    [status-im.utils.platform :refer [platform-specific]]
    [taoensso.timbre :as log]))
 
@@ -35,6 +35,6 @@
            (map-indexed vector disc)]
        (do (log/debug "popular: " i message-id)
            ^{:key (str "message-rtc-" message-id)}
-           [discover-list-item {:message         discover
-                                :show-separator? (not= (inc i) (count disc))}] )
+           [rtc-list-item {:message         discover
+                           :show-separator? (not= (inc i) (count disc))}] )
        ))])

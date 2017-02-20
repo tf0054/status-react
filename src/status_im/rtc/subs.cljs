@@ -10,11 +10,11 @@
                 
                 ;;(do (http-post "https://api.github.com" "/gists" @db js/console))
                 (let [discoveries (get-in @db [:rtc :discoveries])]
-                  (log/debug "get-rtc-discoveries" (count (get-in @db [:rtc :discoveries])) (:rtc @db))
+                  (let [d (get-in @db [:rtc :discoveries])]
+                    (log/debug "get-rtc-discoveries" (count d) d))
                   (reaction {:discoveries discoveries
                              :total discoveries})
-                  )
-                ))
+                  )) )
 
 (register-sub :get-rtc-msg
               (fn [db [_]]

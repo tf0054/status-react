@@ -11,23 +11,44 @@
             [status-im.rtc.js-resources :as r]
             [taoensso.timbre :as log]))
 
-(def request-discoveries-interval-s 600)
+(register-handler :initialize-rtc ;; called from src/status-im/handlers.cljs
+                  (fn [db [_]]
+                    (let [ABI (.-abi r/contract)
+                          account (nth (keys (:accounts db)) 0)
+                          contractInst (.at (.contract (.-eth (:web3 db)) ABI) (.-address r/contract))
+                          eventInst (.logtest contractInst (clj->js {:to account}))]
+                      (log/debug :initialize-rtc (:accounts db) (str ",contract@" (.-address r/contract)))
+                      ;; CARD-RECEIVE
+                      (.watch eventInst (fn [err res]
+                                          (let [result_ (js->clj res :keywordize-keys true)
+                                                result (:args result_)]
+                                            (log/debug "rtc-filter:" err "," result
+                                                       ",t:" (:from result) "-" (:to result)
+                                                       ",m:" (:message result))
+                                            (dispatch [:rtc-receive-card
+                                                       (-> {:photo-path r/photo} ;FAKE
+                                                           (assoc-in [:message-id] (rand-int 10000)) ;FAKE
+                                                           (assoc-in [:whisper-id] "A") ;FAKE
+                                                           (assoc-in [:address] (:from result)) ;Sender address
+                                                           (assoc-in [:status] (str (:message result) "." (rand-int 10000)))
+                                                           (assoc-in [:name] (str (:from result) "." (rand-int 100)))
+                                                           )
+                                                       ])
+                                            )))
+                      (-> db
+                          (assoc-in [:rtc :account] account)
+                          (assoc-in [:rtc :contractInst] contractInst)
+                          ))
+                    ) )
 
-(defn identities [contacts]
-  (->> (map second contacts)
-       (remove (fn [{:keys [dapp? pending]}]
-                 (or pending dapp?)))
-       (map :whisper-identity)))
-
-(defmethod nav/preload-data! :discover
-  [db _]
-  (-> db
-      (assoc-in [:toolbar-search :show] nil)
-      (assoc :tags (discoveries/get-all-tags))
-      (assoc :discoveries (->> (discoveries/get-all :desc)
-                               (map (fn [{:keys [message-id] :as discover}]
-                                      [message-id discover]))
-                               (into {})))))
+(register-handler :rtc-receive-card
+                  (fn [db [_ x]]
+                    (log/debug :rtc-receive-card x "," (get-in db [:rtc :discoveries]))
+                    (assoc-in db [:rtc :discoveries]
+                              (if (nil? (get-in db [:rtc :discoveries]))
+                                [x]
+                                (conj (get-in db [:rtc :discoveries]) x) ))
+                    ))
 
 (register-handler :set-card-to
                   (fn [db [_ name address]]

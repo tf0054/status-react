@@ -48,11 +48,7 @@
    modal [:get :modal]]
   [view
    [status-bar]
-   [toolbar {:title            (label (if-not group
-                                        :t/contacts
-                                        (if (= group :dapps)
-                                          :t/contacts-group-dapps
-                                          :t/contacts-group-new-chat)))
+   [toolbar {:title            "Card to whom?"
              :nav-action       (when modal
                                  (act/back #(dispatch [:navigate-back])))
              :background-color toolbar-background1
@@ -60,38 +56,20 @@
              :actions          [(act/search #())]}]])
 
 (defview rtc-contact-list []
-  [contacts [:contacts-with-letters]
-   group [:get :contacts-group]
+  [contacts [:all-added-people] ;; contacts/subs.cljs
+   ;;group [:get :contacts-group]
    modal [:get :modal]
    ;;click-handler [:get :contacts-click-handler]
    action [:get :contacts-click-action]
    params [:get :contacts-click-params]]
-  (let [show-new-group-chat? (and (= group :people)
-                                  (get-in platform-specific [:chats :new-chat-in-toolbar?]))]
-    [drawer-view
-     [view st/contacts-list-container
-      [contact-list-toolbar]
-      ;; todo add stub
-      #_(when modal
-          [view
-           [contact-list-entry {:click-handler #(do
-                                                  (dispatch [:send-to-webview-bridge
-                                                             {:event (name :webview-send-transaction)}])
-                                                  (dispatch [:navigate-back]))
-                                :icon          :icon_enter_address
-                                :icon-style    st/enter-address-icon
-                                :label         (label :t/enter-address)}]
-           [contact-list-entry {:click-handler nil ;;#(click-handler :qr-scan action)
-                                :icon          :icon_scan_q_r
-                                :icon-style    st/scan-qr-icon
-                                :label         (label (if (= :request action)
-                                                        :t/show-qr
-                                                        :t/scan-qr))}]])
-      (when contacts
-        [list-view {:dataSource          (lw/to-datasource contacts)
-                    :enableEmptySections true
-                    :renderRow           (render-row modal action params)
-                    :bounces             false
-                    :renderHeader        #(list-item [view st/spacing-top])
-                    :renderFooter        #(list-item [view st/spacing-bottom])
-                    :style               st/contacts-list}])]]))
+  [drawer-view
+   [view st/contacts-list-container
+    [contact-list-toolbar]
+    (when contacts
+      [list-view {:dataSource          (lw/to-datasource contacts)
+                  :enableEmptySections true
+                  :renderRow           (render-row modal action params)
+                  :bounces             false
+                  :renderHeader        #(list-item [view st/spacing-top])
+                  :renderFooter        #(list-item [view st/spacing-bottom])
+                  :style               st/contacts-list}])]])
