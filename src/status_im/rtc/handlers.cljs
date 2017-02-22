@@ -62,14 +62,16 @@
 (register-handler :initialize-rtc ;; called from src/status-im/handlers.cljs
                   (fn [db [_]]
                     (let [ABI (.-abi js-res/contract)
-                          account (nth (keys (:accounts db)) 0)
+                          account (nth (keys (:accounts db)) 0) ;; Getting from key of hash
+                          efilter (clj->js {:to (str "0x" account)})
                           contractInst (.at (.contract (.-eth (:web3 db)) ABI) (.-address js-res/contract))
-                          eventInst (.logtest contractInst (clj->js {:to account}))]
-                      (log/debug :initialize-rtc (:accounts db) (str ",contract@" (.-address js-res/contract)))
+                          eventInst (.logtest contractInst efilter)]
+                      (log/debug :initialize-rtc ;;(:accounts db)
+                                 (str ",filter=" efilter
+                                      ",contract@" (.-address js-res/contract)))
                       ;; CARD-RECEIVE
                       (.watch eventInst (fn [err res]
-                                          (let [result_ (js->clj res :keywordize-keys true)
-                                                result (:args result_)]
+                                          (let [result (:args (js->clj res :keywordize-keys true))]
                                             (log/debug "rtc-filter:" err "," result
                                                        ",t:" (:from result) "-" (:to result)
                                                        ",m:" (:message result))
@@ -86,15 +88,15 @@
 
                       (create-account "eeeeee" #(log/debug "crate-account:" %))
                       ;; GETTING CONTACTS FOR RTC
-                      (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/8383aaa6e00aabe97432ae13ada0c25f1444cb15/contacts.json"
-                                #(let [x (json->clj %)]
-                                   (add-contacts db x)
-                                   ;;(log/debug "Contacts-get-success" x)
-                                   )
-                                #(log/debug "Contacts-get-error" ))
+                      #_(http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/8383aaa6e00aabe97432ae13ada0c25f1444cb15/contacts.json"
+                                  #(let [x (json->clj %)]
+                                     (add-contacts db x)
+                                     ;;(log/debug "Contacts-get-success" x)
+                                     )
+                                  #(log/debug "Contacts-get-error" ))
                       
                       (-> db
-                          (assoc-in [:rtc :account] account)
+                          (assoc-in [:rtc :address] account)
                           (assoc-in [:rtc :contractInst] contractInst)
                           ))
                     ) )
@@ -112,8 +114,8 @@
                   (fn [db [_ name address]]
                     (log/debug :set-card-to name address)
                     (-> db
-                        (assoc-in [:rtc :name] name)
-                        (assoc-in [:rtc :address] address))
+                        (assoc-in [:rtc :target_name] name)
+                        (assoc-in [:rtc :target_addr] address))
                     ))
 
 (register-handler :add-msg
@@ -134,32 +136,33 @@
                     ;; https://gist.github.com/b31981768dc22390f8b7cbda283ab7
                     (let [eth (.-eth (:web3 db))
                           defaultAccouint (.-defaultAccount eth)
-                          account (nth (keys (:accounts db)) 0)
+                          ;;account (nth (keys (:accounts db)) 0)
                           ]
 
                       (if (nil? defaultAccouint)
                         (do
-                          (log/debug :add-card "defaultAccouint is nil. getting from app-db" account
-                                     "-" (count (keys (:accounts db))) "," (get-in db [:rtc :message]) "->" (get-in db [:rtc :address]))
+                          (log/debug :add-card
+                                     "msg:" (get-in db [:rtc :message]) ","
+                                     "by" (get-in db [:rtc :address])
+                                     "to" (get-in db [:rtc :target_addr]))
                           ;; CARD-SEND
                           (.sendEther (get-in db [:rtc :contractInst])
-                                      (str "0x" (get-in db [:rtc :address])) ;; Card target
-                                      (get-in db [:rtc :message]) ;; Card msg
-                                      (clj->js {:from (str "0x" account)
+                                      (str "0x" (get-in db [:rtc :target_addr])) ;; Card to(1/2)
+                                      (get-in db [:rtc :message]) ;; Card msg(2/2)
+                                      (clj->js {:from (str "0x" (get-in db [:rtc :address]))
                                                 :gas 50000})
                                       (fn [err res]
                                         (log/debug :add-card-call err (js->clj res))
                                         (if (nil? err)
-                                          (dispatch [:navigate-back])
-                                          (log/debug :add-card-call "backed") )
+                                          (log/debug :add-card-call "backed")
+                                          (dispatch [:navigate-back]) )
                                         ))
-                          ;;(assoc-in db [:rtc :message] "")
                           )
                         (do
                           (log/debug :add-card (js->clj (.-defaultAccount eth) ;;(.-accounts eth)
                                                         ))
                           (.sendTransaction eth (clj->js {:from  (str "0x" defaultAccouint)
-                                                          :to    (get-in db [:rtc :address])
+                                                          :to    (get-in db [:rtc :target_addr])
                                                           :value 10000000})
                                             (fn [err res] (log/debug :add-card-call err (js->clj res))))
                           ::db
