@@ -16,7 +16,7 @@
   :clean-targets ["target/" "index.ios.js" "index.android.js"]
   :aliases {"prod-build" ^{:doc "Recompile code with prod profile."}
                          ["do" "clean"
-                          ["with-profile" "prod" "cljsbuild" "once" "ios"]
+                          ;["with-profile" "prod" "cljsbuild" "once" "ios"]
                           ["with-profile" "prod" "cljsbuild" "once" "android"]]}
   :test-paths ["test/clj"]
   :figwheel {:nrepl-port 7888}

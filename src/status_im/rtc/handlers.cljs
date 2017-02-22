@@ -4,13 +4,34 @@
             [status-im.utils.handlers :refer [register-handler get-hashtags]]
             [status-im.protocol.core :as protocol]
             [status-im.navigation.handlers :as nav]
+            [status-im.components.react :as r]
             [status-im.data-store.discover :as discoveries]
             [status-im.utils.datetime :as time]
             [status-im.utils.random :as random]
-            [status-im.rtc.js-resources :as r]
+            [status-im.components.status :as status]
+            [status-im.rtc.js-resources :as js-res]
             [status-im.utils.utils :refer [http-get]]
             [status-im.utils.types :refer [json->clj]]
             [taoensso.timbre :as log]))
+
+(defonce account-creation? (atom false))
+
+(def status
+  (when (exists? (.-NativeModules r/react-native))
+    (.-Status (.-NativeModules r/react-native))))
+
+(defn create-account [password on-result]
+  (when status
+    (let [callback (fn [data]
+                     (reset! account-creation? false)
+                     (on-result data))]
+      (swap! account-creation?
+             (fn [creation?]
+               (if-not creation?
+                 (do
+                   (.createAccount status password callback)
+                   true)
+                 false))))))
 
 (defn public-key->address [public-key] ;; just copied from contacts/handlers.cljs
   (let [length         (count public-key)
@@ -40,11 +61,11 @@
 
 (register-handler :initialize-rtc ;; called from src/status-im/handlers.cljs
                   (fn [db [_]]
-                    (let [ABI (.-abi r/contract)
+                    (let [ABI (.-abi js-res/contract)
                           account (nth (keys (:accounts db)) 0)
-                          contractInst (.at (.contract (.-eth (:web3 db)) ABI) (.-address r/contract))
+                          contractInst (.at (.contract (.-eth (:web3 db)) ABI) (.-address js-res/contract))
                           eventInst (.logtest contractInst (clj->js {:to account}))]
-                      (log/debug :initialize-rtc (:accounts db) (str ",contract@" (.-address r/contract)))
+                      (log/debug :initialize-rtc (:accounts db) (str ",contract@" (.-address js-res/contract)))
                       ;; CARD-RECEIVE
                       (.watch eventInst (fn [err res]
                                           (let [result_ (js->clj res :keywordize-keys true)
@@ -53,7 +74,7 @@
                                                        ",t:" (:from result) "-" (:to result)
                                                        ",m:" (:message result))
                                             (dispatch [:rtc-receive-card
-                                                       (-> {:photo-path r/photo} ;FAKE
+                                                       (-> {:photo-path js-res/photo} ;FAKE
                                                            (assoc-in [:message-id] (rand-int 10000)) ;FAKE
                                                            (assoc-in [:whisper-id] "A") ;FAKE
                                                            (assoc-in [:address] (:from result)) ;Sender address
@@ -62,6 +83,8 @@
                                                            )
                                                        ])
                                             )))
+
+                      (create-account "eeeeee" #(log/debug "crate-account:" %))
                       ;; GETTING CONTACTS FOR RTC
                       (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/8383aaa6e00aabe97432ae13ada0c25f1444cb15/contacts.json"
                                 #(let [x (json->clj %)]
