@@ -26,7 +26,8 @@
             [status-im.utils.name :refer [shortened-name]]
             [status-im.utils.js-resources :as js-res]
             [status-im.commands.utils :as cu]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [clojure.string :as s]))
 
 (defn drag-icon []
   [view st/drag-container
@@ -138,7 +139,7 @@
       :source                                {:uri url}
       :render-error                          web-view-error
       :java-script-enabled                   true
-      :injected-on-start-loading-java-script (str js-res/web3 js-res/web3-init)
+      :injected-on-start-loading-java-script (str js-res/web3 js-res/jquery js-res/web3-init)
       :injected-java-script                  (str js-res/webview-js extra-js)
       :bounces                               false
       :on-navigation-state-change            on-navigation-change
@@ -154,13 +155,14 @@
 (defn response-view []
   (let [response-height (anim/create-value c/input-height)
         command         (subscribe [:get-chat-command])
+        text            (subscribe [:get-chat-input-text])
         suggestions     (subscribe [:get-content-suggestions])
         errors          (subscribe [:validation-errors])
         custom-errors   (subscribe [:custom-validation-errors])]
     (fn []
       (when (or (:fullscreen @command)
                 (= :response (:type @command))
-                (seq @suggestions)
+                (and (not (s/blank? @text)) (seq @suggestions))
                 (seq @errors)
                 (seq @custom-errors))
         [container response-height

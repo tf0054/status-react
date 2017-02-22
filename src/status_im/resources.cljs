@@ -25,4 +25,6 @@
    :flight-delays-suck (js/require "./images/contacts/flight-delays-suck.png")
    :jarrad (js/require "./images/contacts/jarrad.png")
    :firstblood (js/require "./images/contacts/FirstBlood.png")
-   :gnosis (js/require "./images/contacts/gnosis.png")})
+   :gnosis (js/require "./images/contacts/gnosis.png")
+   :melonport (js/require "./images/contacts/melonport.png")
+   :bchat (js/require "./images/contacts/bchat.png")})

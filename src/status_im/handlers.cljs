@@ -1,34 +1,35 @@
 (ns status-im.handlers
   (:require
-   [re-frame.core :refer [after dispatch dispatch-sync debug]]
-   [status-im.db :refer [app-db]]
-   [status-im.data-store.core :as data-store]
-   [taoensso.timbre :as log]
-   [status-im.utils.crypt :refer [gen-random-bytes]]
-   [status-im.components.status :as status]
-   [status-im.utils.handlers :refer [register-handler] :as u]
-   status-im.chat.handlers
-   status-im.group-settings.handlers
-   status-im.navigation.handlers
-   status-im.contacts.handlers
-   status-im.discover.handlers
-   status-im.rtc.handlers
-   status-im.new-group.handlers
-   status-im.participants.handlers
-   status-im.profile.handlers
-   status-im.commands.handlers.loading
-   status-im.commands.handlers.jail
-   status-im.qr-scanner.handlers
-   status-im.accounts.handlers
-   status-im.protocol.handlers
-   status-im.transactions.handlers
-   status-im.network.handlers
-   status-im.debug.handlers
-   [status-im.utils.types :as t]
-   [status-im.i18n :refer [label]]
-   [status-im.constants :refer [console-chat-id]]
-   [status-im.utils.ethereum-network :as enet]
-   [status-im.utils.instabug :as inst]))
+    [re-frame.core :refer [after dispatch dispatch-sync debug]]
+    [status-im.db :refer [app-db]]
+    [status-im.data-store.core :as data-store]
+    [taoensso.timbre :as log]
+    [status-im.utils.crypt :refer [gen-random-bytes]]
+    [status-im.components.status :as status]
+    [status-im.utils.handlers :refer [register-handler] :as u]
+    status-im.chat.handlers
+    status-im.group-settings.handlers
+    status-im.navigation.handlers
+    status-im.contacts.handlers
+    status-im.discover.handlers
+    status-im.rtc.handlers
+    status-im.new-group.handlers
+    status-im.participants.handlers
+    status-im.profile.handlers
+    status-im.commands.handlers.loading
+    status-im.commands.handlers.jail
+    status-im.qr-scanner.handlers
+    status-im.accounts.handlers
+    status-im.protocol.handlers
+    status-im.transactions.handlers
+    status-im.network.handlers
+    status-im.debug.handlers
+    [status-im.utils.types :as t]
+    [status-im.i18n :refer [label]]
+    [status-im.constants :refer [console-chat-id]]
+    [status-im.utils.ethereum-network :as enet]
+    [status-im.utils.instabug :as inst]
+    [status-im.utils.platform :as p]))
 
 ;; -- Common --------------------------------------------------------------
 
@@ -47,16 +48,14 @@
     (assoc-in db [:animations k] v)))
 
 (register-handler :initialize-db
-  (fn [{:keys [status-module-initialized? network-status network]} _]
+  (fn [{:keys [status-module-initialized? status-node-started?
+               network-status network]} _]
     (data-store/init)
-    (cond-> (assoc app-db :current-account-id nil
-                          :network-status network-status)
-
-            status-module-initialized?
-            (assoc :status-module-initialized? true)
-
-            true
-            (assoc :network (or network :testnet)))))
+    (assoc app-db :current-account-id nil
+                  :network-status network-status
+                  :status-module-initialized? (or p/ios? js/goog.DEBUG status-module-initialized?)
+                  :status-node-started? status-node-started?
+                  :network (or network :testnet))))
 
 (register-handler :initialize-account-db
   (fn [db _]
@@ -131,9 +130,9 @@
         (case type
           "transaction.queued" (dispatch [:transaction-queued event])
           "transaction.failed" (dispatch [:transaction-failed event])
-          "node.started" (log/debug "Event *node.started* received")
+          "node.started"       (dispatch [:status-node-started!])
           "module.initialized" (dispatch [:status-module-initialized!])
-          "local_storage.set" (dispatch [:set-local-storage event])
+          "local_storage.set"  (dispatch [:set-local-storage event])
           (log/debug "Event " type " not handled"))))))
 
 (register-handler :status-module-initialized!
@@ -142,6 +141,10 @@
              (status/module-initialized!))))
   (fn [db]
     (assoc db :status-module-initialized? true)))
+
+(register-handler :status-node-started!
+  (fn [db]
+    (assoc db :status-node-started? true)))
 
 (register-handler :crypt-initialized
   (u/side-effect!
