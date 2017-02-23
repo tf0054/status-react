@@ -4,10 +4,10 @@
             [clojure.string :as str]
             [status-im.components.react :refer [view
                                                 text
+                                                text-input
                                                 image
                                                 linear-gradient
                                                 touchable-highlight]]
-            [status-im.components.text-field.view :refer [text-field]]
             [status-im.utils.identicon :refer [identicon]]
             [status-im.components.status-bar :refer [status-bar]]
             [status-im.components.toolbar.view :refer [toolbar]]
@@ -22,9 +22,7 @@
                                                  color-blue]]
             [status-im.i18n :refer [label]]
             [cljs.spec :as s]
-            ;;[status-im.contacts.validations :as v]
-            [status-im.contacts.styles :as st]
-            [status-im.data-store.contacts :as contacts]
+            [status-im.rtc.styles-c :as st]
             [status-im.utils.gfycat.core :refer [generate-gfy]]
             [status-im.utils.hex :refer [normalize-hex]]
             [status-im.utils.platform :refer [platform-specific]]
@@ -44,33 +42,45 @@
                   (dispatch [:clear-msg]))
     }])
 
+(defn- replaceReturn [x]
+  (clojure.string/join "_"
+                       (clojure.string/split x "\n")) )
+
 (defview msgbody-input [error]
   [msg [:get-rtc-msg]
    current-account [:get-current-account]]
-  ;; (let [error (when-not (str/blank? whisper-identity)
-  ;;              (validation-error-message whisper-identity current-account error))]
   [view button-input-container
-   [text-field
-    {:error          error
-     :error-color    color-blue
-     :input-style    st/qr-input
-     :value          msg
-     :wrapper-style  button-input
-     :label          "Message"
-     :on-change-text #(dispatch [:add-msg %])}]
+   [text-input {:error          error
+                :error-color    color-blue
+                ;;:value          msg
+                :editable true
+                :style {:marginLeft        16
+                        :height            100
+                        :width             300
+                        :alignItems        :center
+                        :justifyContent    :center
+                        :borderBottomWidth 2}
+                :wrapper-style  button-input
+                :placeholder    "Message here"
+                :max-length     240
+                :multiline      true
+                :on-submit-editing #(let [text (.-text (.-nativeEvent %))]
+                                      (log/debug "submitediting" (replaceReturn text))
+                                      (dispatch [:add-msg text]))
+                }]
    ])
 
 (defview new-card []
   [error [:get :new-contact-public-key-error]
    account [:get-current-account]]
   [view st/contact-form-container
-   [status-bar]
+   ;;[status-bar]
    [toolbar {:background-color toolbar-background1
              :style            (get-in platform-specific [:component-styles :toolbar])
              :nav-action       (act/back #(dispatch [:navigate-back]))
              :title            "-NEW CARD INPUT-"
              :actions          (toolbar-actions account error)
-             }]
+             }] 
    [view st/form-container
     [msgbody-input error]]
    [view st/address-explication-container

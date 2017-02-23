@@ -28,11 +28,10 @@
             [taoensso.timbre :as log]))
 
 (defn toolbar-view []
-  (let [actions      [(act/add #(dispatch [:navigate-to :new-contact]))]] 
-    (toolbar
-     {:title              "RTC THANKS CARD"
-      :nav-action         (act/hamburger open-drawer)
-      })))
+  (toolbar
+   {:title              "RTC THANKS CARD"
+    :nav-action         (act/hamburger open-drawer)
+    }))
 
 (defn contacts-action-button []
   [action-button {:button-color color-blue
