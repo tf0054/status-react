@@ -12,7 +12,7 @@
             [status-im.components.toolbar.view :refer [toolbar]]
             [status-im.components.toolbar.actions :as act]
             [status-im.components.toolbar.styles :refer [toolbar-background1]]
-            [status-im.components.drawer.view :refer [drawer-view open-drawer]]
+            ;;[status-im.components.drawer.view :refer [drawer-view open-drawer]]
             [status-im.components.image-button.view :refer [scan-button]]
             [status-im.contacts.styles :as st]
             [status-im.utils.listview :as lw]
@@ -62,14 +62,16 @@
    ;;click-handler [:get :contacts-click-handler]
    action [:get :contacts-click-action]
    params [:get :contacts-click-params]]
-  [drawer-view
-   [view st/contacts-list-container
-    [contact-list-toolbar]
-    (when contacts
-      [list-view {:dataSource          (lw/to-datasource contacts)
-                  :enableEmptySections true
-                  :renderRow           (render-row modal action params)
-                  :bounces             false
-                  :renderHeader        #(list-item [view st/spacing-top])
-                  :renderFooter        #(list-item [view st/spacing-bottom])
-                  :style               st/contacts-list}])]])
+  ;; [drawer-view
+  [view st/contacts-list-container
+   [contact-list-toolbar]
+   (when contacts
+     [list-view {:dataSource          (lw/to-datasource contacts)
+                 :enableEmptySections true
+                 :renderRow           (render-row modal action params)
+                 :bounces             false
+                 :renderHeader        #(list-item [view st/spacing-top])
+                 :renderFooter        #(list-item [view st/spacing-bottom])
+                 :style               st/contacts-list}])]
+  ;;]
+  )

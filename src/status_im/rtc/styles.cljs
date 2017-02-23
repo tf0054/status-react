@@ -104,11 +104,11 @@
 
 ;; Discover tag
 
-(def discover-tag-toolbar
+(def rtc-tag-toolbar
   {:border-bottom-color "#D7D7D7"
    :border-bottom-width 1})
 
-(def discover-tag-container
+(def rtc-tag-container
   {:flex            1
    :backgroundColor color-light-gray})
 
