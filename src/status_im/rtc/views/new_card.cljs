@@ -38,8 +38,10 @@
 (defn toolbar-actions [account error]  
   [{:image   {:source {:uri :icon_ok_blue}
               :style  icon-ok}
-    :handler #(do (dispatch [:add-card account])
-                  (dispatch [:remove-msg]))
+    :handler #(do (dispatch [:regist-card
+                             (fn [] (log/debug :regist-card-success))
+                             (fn [] (log/debug :regist-card-fail))])
+                  (dispatch [:clear-msg]))
     }])
 
 (defview msgbody-input [error]
@@ -66,7 +68,7 @@
    [toolbar {:background-color toolbar-background1
              :style            (get-in platform-specific [:component-styles :toolbar])
              :nav-action       (act/back #(dispatch [:navigate-back]))
-             :title            "NEW CARD INPUT2"
+             :title            "-NEW CARD INPUT-"
              :actions          (toolbar-actions account error)
              }]
    [view st/form-container

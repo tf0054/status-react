@@ -25,7 +25,7 @@
             [status-im.utils.platform :refer [platform-specific]]
             [status-im.i18n :refer [label]]
             [status-im.rtc.styles :as st]
-            [status-im.contacts.styles :as contacts-st]
+            [status-im.contacts.styles :as contacts-st]            
             [taoensso.timbre :as log]))
 
 (defn contacts-action-button []
@@ -51,7 +51,11 @@
     [view st/discover-tag-container
      [status-bar]
      [touchable-highlight {:style    {:position :absolute}
-                           :on-press #(dispatch [:navigate-back])}
+                           :on-press #(do
+                                        (log/debug "onßpress")
+                                        ;;(dispatch [:navigate-to :rtc])
+                                        (act/hamburger open-drawer) ;;BROKEN
+                                        )}
       [view (get-in platform-specific [:component-styles :toolbar-nav-action])
        [icon :back {:width  8
                     :height 14}]]]

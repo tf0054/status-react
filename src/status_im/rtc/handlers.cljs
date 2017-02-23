@@ -120,18 +120,18 @@
 
 (register-handler :add-msg
                   (fn [db [_ msg]]
-                    (log/debug :add-msg msg)
+                    ;;(log/debug :add-msg msg)
                     (assoc-in db [:rtc :message] msg)
                     ))
 
-(register-handler :remove-msg
+(register-handler :clear-msg
                   (fn [db _]
-                    (log/debug :remove-msg)
+                    (log/debug :clear-msg)
                     (assoc-in db [:rtc :message] "")
                     ))
 
-(register-handler :add-card
-                  (fn [db _]
+(register-handler :regist-card
+                  (fn [db  [_ success fail]]
                     (log/debug :add-card)
                     ;; https://gist.github.com/b31981768dc22390f8b7cbda283ab7
                     (let [eth (.-eth (:web3 db))
@@ -141,7 +141,7 @@
 
                       (if (nil? defaultAccouint)
                         (do
-                          (log/debug :add-card
+                          (log/debug :regist-card
                                      "msg:" (get-in db [:rtc :message]) ","
                                      "by" (get-in db [:rtc :address])
                                      "to" (get-in db [:rtc :target_addr]))
@@ -154,10 +154,10 @@
                                       (fn [err res]
                                         (log/debug :add-card-call err (js->clj res))
                                         (if (nil? err)
-                                          (log/debug :add-card-call "backed")
-                                          (dispatch [:navigate-back]) )
+                                          fail
+                                          success)
                                         ))
-                          )
+                          (dispatch [:navigate-to :rtc]) )
                         (do
                           (log/debug :add-card (js->clj (.-defaultAccount eth) ;;(.-accounts eth)
                                                         ))
@@ -165,7 +165,6 @@
                                                           :to    (get-in db [:rtc :target_addr])
                                                           :value 10000000})
                                             (fn [err res] (log/debug :add-card-call err (js->clj res))))
-                          ::db
                           ) )
                       db
                       )))
