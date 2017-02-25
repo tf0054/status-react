@@ -86,4 +86,4 @@
    [view st/address-explication-container
     [text {:style st/address-explication
            :font  :default}
-     "Here you can add some explanation"]]])
+     (str (:name account) "\n" (:address account) "\n" "Here you can add some explanation")]]])
