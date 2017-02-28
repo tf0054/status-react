@@ -1,7 +1,8 @@
 (ns status-im.utils.utils
   (:require [status-im.constants :as const]
             [reagent.core :as r]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [taoensso.timbre :as log]))
 
 (defn require [module]
   (if (exists? js/window)
@@ -22,6 +23,7 @@
   ([action data on-success]
    (http-post action data on-success nil))
   ([action data on-success on-error]
+   (log/debug "http-post" action "," data)
    (-> (.fetch js/window
                (str const/server-address action)
                (clj->js {:method "POST"

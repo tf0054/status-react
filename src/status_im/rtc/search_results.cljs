@@ -25,7 +25,9 @@
             [status-im.i18n :refer [label]]
             [status-im.rtc.styles :as st]
             [status-im.contacts.styles :as contacts-st]            
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            #_[status-im.android.platform :refer [show-dialog]]
+            ))
 
 (defn toolbar-view []
   (toolbar
@@ -34,24 +36,43 @@
     }))
 
 (defn contacts-action-button []
-  [action-button {:button-color color-blue
-                  :offset-x     16
-                  :offset-y     22
-                  :hide-shadow  true
-                  :spacing      13}
-   [action-button-item
-    {:title       "NEW CARD"
-     :buttonColor :#9b59b6
-     :onPress     #(dispatch [:navigate-to :rtc-contact])}
-    [ion-icon {:name  :md-create
-               :style create-icon}]]])
+  (let [blocknum (subscribe [:get-rtc-blocknumber])]
+    [action-button {:button-color color-blue
+                    :offset-x     16
+                    :offset-y     22
+                    :hide-shadow  true
+                    :spacing      13}
+     [action-button-item
+      {:title       "NEW CARD"
+       :buttonColor :#9b59b6
+       :onPress     #(dispatch [:navigate-to :rtc-contact])}
+      [ion-icon {:name  :md-create
+                 :style create-icon}]]
+     #_[action-button-item
+        {:title       "GET INFO"
+         :buttonColor :#9bf9b6
+         :onPress     #(dispatch [:get-ethinfo])}
+        [ion-icon {:name  :md-create
+                   :style create-icon}]]
+     [action-button-item
+      {:title       "DIALOG"
+       :buttonColor :#9bf9b6
+       :onPress     #(do
+                       (dispatch [:get-ethinfo])
+                       #_(show-dialog {:title (str @blocknum)
+                                       :options '()
+                                       :callback (fn [pos txt]
+                                                   (log/debug "dialog" pos "," txt))} ))}
+      [ion-icon {:name  :md-create
+                 :style create-icon}]]
+     ]))
 
 (defn render-separator [_ row-id _]
   (list-item [view {:style st/row-separator
                     :key   row-id}]))
 
-(defview rtc-discover []
-  [discoveries [:get-rtc-discoveries]]
+(defview rtc-main []
+  [discoveries [:get-rtc-card]]
   (let [datasource (to-datasource discoveries)]
     [drawer-view
      [view st/rtc-tag-container

@@ -64,9 +64,13 @@
                 :placeholder    "Message here"
                 :max-length     240
                 :multiline      true
-                :on-submit-editing #(let [text (.-text (.-nativeEvent %))]
-                                      (log/debug "submitediting" (replaceReturn text))
-                                      (dispatch [:add-msg text]))
+                :on-change-text #(do
+                                   (log/debug "submitediting" (replaceReturn %))
+                                   (dispatch [:add-msg %])) 
+                ;; :on-submit-editing
+                #_(let [text (.-text (.-nativeEvent %))]
+                    (log/debug "submitediting" (replaceReturn text))
+                    (dispatch [:add-msg text]))
                 }]
    ])
 

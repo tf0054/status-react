@@ -11,7 +11,7 @@
    [taoensso.timbre :as log]))
 
 (defview rtc-popular-list [{:keys [tag]}]
-  [discoveries [:get-rtc-discoveries] ]
+  [discoveries [:get-rtc-card] ]
   [view (merge st/popular-list-container
                (get-in platform-specific [:component-styles :discover :popular]))
    [view st/row

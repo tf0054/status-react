@@ -4,65 +4,28 @@
             [status-im.utils.handlers :refer [register-handler get-hashtags]]
             [status-im.protocol.core :as protocol]
             [status-im.navigation.handlers :as nav]
-            [status-im.components.react :as r]
             [status-im.data-store.discover :as discoveries]
             [status-im.utils.datetime :as time]
             [status-im.utils.random :as random]
             [status-im.components.status :as status]
             [status-im.rtc.js-resources :as js-res]
+            [status-im.rtc.utils :as utils]
             [status-im.utils.utils :refer [http-get]]
             [status-im.utils.types :refer [json->clj]]
             [taoensso.timbre :as log]))
-
-(defonce account-creation? (atom false))
-
-(def status
-  (when (exists? (.-NativeModules r/react-native))
-    (.-Status (.-NativeModules r/react-native))))
-
-(defn create-account [password on-result]
-  (when status
-    (let [callback (fn [data]
-                     (reset! account-creation? false)
-                     (on-result data))]
-      (swap! account-creation?
-             (fn [creation?]
-               (if-not creation?
-                 (do
-                   (.createAccount status password callback)
-                   true)
-                 false))))))
-
-(defn public-key->address [public-key] ;; just copied from contacts/handlers.cljs
-  (let [length         (count public-key)
-        normalized-key (case length
-                         132 (subs public-key 4)
-                         130 (subs public-key 2)
-                         128 public-key
-                         nil)]
-    (when normalized-key
-      (subs (.sha3 js/Web3.prototype normalized-key #js {:encoding "hex"}) 26))))
-
-(defn add-contacts [{:keys [chats]} x]
-  (doseq [[id {:keys [name photo-path public-key add-chat?
-                      dapp? dapp-url dapp-hash]}] x]
-    (let [id' (clojure.core/name id)]
-      (when-not (chats id')
-        (when add-chat?
-          (dispatch [:add-chat id' {:name (:en name)}]))
-        (dispatch [:add-contacts [{:whisper-identity id'
-                                   :address          (public-key->address id')
-                                   :name             (:en name)
-                                   :photo-path       photo-path
-                                   :public-key       public-key
-                                   :dapp?            dapp?
-                                   :dapp-url         (:en dapp-url)
-                                   :dapp-hash        dapp-hash}]])))))
 
 (defn- getAccount [db]
   (let [current-account-id (:current-account-id db)]
     (get-in db [:accounts current-account-id]))
   )
+
+(register-handler :rtc-stop-watch
+                  (fn [db [_]]
+                    (let [eventInst (get-in db [:rtc :contractInst])]
+                      (.stopWatching eventInst)
+                      )
+                    (log/debug "stopwatch")
+                    ))
 
 (register-handler :initialize-rtc ;; called from src/status-im/handlers.cljs
                   (fn [db [_]]
@@ -72,7 +35,7 @@
                           contractInst (.at (.contract (.-eth (:web3 db)) ABI) (.-address js-res/contract))
                           eventInst (.logtest contractInst efilter)]
                       (log/debug :initialize-rtc ;;(:accounts db)
-                                 (str ",filter=" efilter
+                                 (str ",filter=" (str "0x" address) 
                                       ",contract@" (.-address js-res/contract)))
                       ;; CARD-RECEIVE
                       (.watch eventInst (fn [err res]
@@ -80,30 +43,34 @@
                                             (log/debug "rtc-card-receive:" err "," result
                                                        ",t:" (:from result) "-" (:to result)
                                                        ",m:" (:message result))
-                                            (dispatch [:rtc-receive-card
-                                                       (-> {:photo-path js-res/photo} ;FAKE
-                                                           (assoc-in [:message-id] (rand-int 10000)) ;FAKE
-                                                           (assoc-in [:whisper-id] "A") ;FAKE
-                                                           (assoc-in [:address] (:from result)) ;Sender address
-                                                           (assoc-in [:status] (str (:message result) "." (rand-int 10000)))
-                                                           (assoc-in [:name] (str (:from result) "." (rand-int 100)))
-                                                           )
-                                                       ])
+                                            (if (nil? result)
+                                              (do
+                                                (log/debug "ERR" result ".")
+                                                ;;(.stopWatching eventInst)
+                                                (dispatch [:rtc-stop-watch]))
+                                              (dispatch [:rtc-receive-card
+                                                         (-> {:photo-path js-res/photo} ;FAKE
+                                                             (assoc-in [:message-id] (rand-int 10000)) ;FAKE
+                                                             (assoc-in [:whisper-id] "A") ;FAKE
+                                                             (assoc-in [:address] (:from result)) ;Sender address
+                                                             (assoc-in [:status] (str (:message result) "." (rand-int 10000)))
+                                                             (assoc-in [:name] (str (:from result) "." (rand-int 100)))
+                                                             )
+                                                         ]) )
                                             )))
 
                       ;; CRREATE NEW ACCOUT
-                      #_(create-account "eeeeee" #(log/debug "crate-account:" %))
+                      #_(utils/create-account "eeeeee" #(log/debug "crate-account:" %))
                       
                       ;; GETTING CONTACTS FOR RTC
                       #_(http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/8383aaa6e00aabe97432ae13ada0c25f1444cb15/contacts.json"
                                   #(let [x (json->clj %)]
-                                     (add-contacts db x)
+                                     (utils/add-contacts db x)
                                      ;;(log/debug "Contacts-get-success" x)
                                      )
                                   #(log/debug "Contacts-get-error" ))
                       
                       (-> db
-                          ;;(assoc-in [:rtc :address])
                           (assoc-in [:rtc :contractInst] contractInst)
                           ))
                     ) )
@@ -149,7 +116,7 @@
                                   (str "0x" (get-in db [:rtc :target_addr])) ;; Card to(1/2)
                                   (get-in db [:rtc :message]) ;; Card msg(2/2)
                                   (clj->js {:from (str "0x" address)
-                                            :gas 50000})
+                                            :gas 2000000})
                                   (fn [err res]
                                     (log/debug :add-card-call err (js->clj res))
                                     (if (nil? err)
@@ -168,3 +135,32 @@
                       db
                       )))
 
+(register-handler :get-ethinfo
+                  (fn [db _]
+                    (log/debug :get-ethinfo)
+                    (let [address (:address (getAccount db))]
+                      (utils/getBalance db (str "0x" address )
+                                        (fn [err res]
+                                          (log/debug "getBalance" err "," res)))
+                      (utils/getBalance db "0x78348AA884Cb4b4619514e728631742AE8Dd9927"
+                                        (fn [err res]
+                                          (log/debug "getBalance" err "," res)))
+                      (utils/getPeerCount db
+                                          (fn [err res]
+                                            (utils/showToast (str "Peers:" res))
+                                            (log/debug "getPeerCount" err "," res)))
+                      (utils/getBlockNumber db
+                                            (fn [err res]
+                                              (dispatch [:set-blocknumber res] )
+                                              (utils/showToast (str "BlockNumber:" res))
+                                              (log/debug "getBlockNumber" err "," res)))
+                      )
+                    db
+                    ))
+
+(register-handler :set-blocknumber
+                  (fn [db [_ num]]
+                    (log/debug :set-blocknumber)
+                    (-> db
+                        (assoc-in [:rtc :blockNumer] num))
+                    ))

@@ -17,7 +17,7 @@
             [status-im.contacts.views.new-contact :refer [new-contact]]
             [status-im.qr-scanner.screen :refer [qr-scanner]]
             [status-im.discover.search-results :refer [discover-search-results]]
-            [status-im.rtc.search-results :refer [rtc-discover]]
+            [status-im.rtc.search-results :refer [rtc-main]]
             [status-im.rtc.views.new-card :refer [new-card]]
             [status-im.rtc.views.contact-list :refer [rtc-contact-list]]
             [status-im.chat.screen :refer [chat]]
@@ -106,7 +106,7 @@
                               :add-participants new-participants
                               :remove-participants remove-participants
                               :chat-list main-tabs
-                              :rtc rtc-discover
+                              :rtc rtc-main
                               :rtc-contact rtc-contact-list
                               :rtc-new-card new-card
                               :new-group new-group
