@@ -62,8 +62,8 @@
     (.getBalance eth address
                  (.-defaultBlock eth)
                  func
-                 #(fn [err res]
-                    (log/debug "getBalance" address ":" err "," res)) ) 
+                 #_(fn [err res]
+                     (log/debug "getBalance" address ":" err "," res)) ) 
     ))
 
 (defn getBlockNumber [db func]

@@ -1,7 +1,7 @@
 (ns status-im.rtc.search-results
   (:require-macros [status-im.utils.views :refer [defview]])
   (:require [re-frame.core :refer [subscribe dispatch]]
-            [status-im.utils.listview :refer [to-datasource]]
+            #_[status-im.utils.listview :refer [to-datasource]]
             [status-im.components.status-bar :refer [status-bar]]
             [status-im.components.react :refer [view
                                                 text
@@ -73,28 +73,30 @@
 
 (defview rtc-main []
   [discoveries [:get-rtc-card]]
-  (let [datasource (to-datasource discoveries)]
-    [drawer-view
-     [view st/rtc-tag-container
-      [toolbar-view]
-      (if (empty? discoveries)
-        [view (merge st/empty-view {:margin-top 55})
-         ;; todo change icon
-         [icon :group_big contacts-st/empty-contacts-icon]
-         [text {:style contacts-st/empty-contacts-text}
-          "NO DATA"
-          ;; (label :t/no-statuses-found)
-          ]]
-        [scroll-view (merge {:align-items    :stretch
-                             :flex-firection :column
-                             :padding-left     16
-                             :padding-right     16
-                             :margin-top     55}
-                            {:keyboardShouldPersistTaps true
-                             :bounces                   false})
-         (for [name [0]]
-           ^{:key (str "list-rtc-" name)}
-           [rtc-popular-list {:tag name}]) ]
-        )
-      [contacts-action-button]
-      ]] ))
+  ;; CARD-RECEIVE
+  (do (dispatch [:rtc-start-watch])
+      ;;
+      [drawer-view
+       [view st/rtc-tag-container
+        [toolbar-view]
+        (if (empty? discoveries)
+          [view (merge st/empty-view {:margin-top 55})
+           ;; todo change icon
+           [icon :group_big contacts-st/empty-contacts-icon]
+           [text {:style contacts-st/empty-contacts-text}
+            "NO DATA"
+            ;; (label :t/no-statuses-found)
+            ]]
+          [scroll-view (merge {:align-items    :stretch
+                               :flex-firection :column
+                               :padding-left     16
+                               :padding-right     16
+                               :margin-top     55}
+                              {:keyboardShouldPersistTaps true
+                               :bounces                   false})
+           (for [name [0]]
+             ^{:key (str "list-rtc-" name)}
+             [rtc-popular-list {:tag name}]) ]
+          )
+        [contacts-action-button]
+        ]]) )
