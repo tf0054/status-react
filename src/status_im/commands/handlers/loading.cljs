@@ -66,7 +66,7 @@
   (status/parse-jail identity file
                      (fn [result]
                        (let [{:keys [error result]} (json->clj result)]
-                         (log/debug "Error parsing commands: " error result)
+                         ;;(log/debug "Error parsing commands: " error result)
                          (if error
                            (dispatch [::loading-failed! identity ::error-in-jail error])
                            (if identity

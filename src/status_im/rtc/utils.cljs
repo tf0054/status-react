@@ -2,10 +2,36 @@
   (:require-macros [status-im.utils.slurp :refer [slurp]])
   (:require [re-frame.core :refer [after dispatch enrich]]
             [status-im.utils.types :refer [json->clj]]
+            [status-im.utils.identicon :refer [identicon]]
             [status-im.components.react :as r]
             [taoensso.timbre :as log]
             )
   )
+
+(defn http-post [url data on-success on-error]
+  (-> (.fetch js/window
+              url
+              (clj->js {:method "POST"
+                        :body (.stringify js/JSON (clj->js data))}))
+      (.then (fn [response]
+               (log/debug "rtc/utils/http-post/Res" (.text response))
+               (.text response)))
+      (.then (fn [text]
+               (let [json (.parse js/JSON text)
+                     obj (js->clj json :keywordize-keys true)]
+                 (on-success obj))))
+      (.catch (or on-error
+                  (fn [error]
+                    (log/debug "rtc/utils/http-post/Error" (str error)))))))
+
+(defn gist-post [url desc text on-success on-error]
+  (http-post url
+             {:description desc
+              :public "true"
+              :files {"log.txt" {:content text}}}
+             ;;#(on-success (:html_url %))
+             on-success
+             on-error))
 
 ;; Testing
 
@@ -48,7 +74,9 @@
         (dispatch [:add-contacts [{:whisper-identity id'
                                    :address          (public-key->address id')
                                    :name             (:en name)
-                                   :photo-path       photo-path
+                                   :photo-path       (if (nil? photo-path)
+                                                       (identicon public-key)
+                                                       photo-path)
                                    :public-key       public-key
                                    :dapp?            dapp?
                                    :dapp-url         (:en dapp-url)

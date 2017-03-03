@@ -58,12 +58,25 @@
 (defn orientation->keyword [o]
   (keyword (.toLowerCase o)))
 
-(defn validate-current-view
-  [current-view signed-up?]
-  (if (or (contains? #{:login :chat :recover :accounts} current-view)
-          signed-up?)
-    current-view
-    :chat))
+(defn validate-current-view [current-view signed-up?] ;; RECOVER FLOW ADDED TEMPORARILY  
+  (let [ac (subscribe [:get-in [:accounts]])
+        cc (subscribe [:get-current-account])
+        address (nth (keys @ac) 0)]
+    (log/debug "RTC LOGIC:" current-view signed-up?
+               (update-in @ac [address] dissoc :photo-path) "-"
+               (dissoc @cc :photo-path))
+    (if (and (= 1 (count @ac)) (nil? @cc)) ;; FOR AFTER RECOVERED
+      (do (dispatch [:set-current-account address])
+          (dispatch [:navigate-to :login address])
+          (dispatch [:set-in [:login :address] address])) )
+    (if (= 0 (count @ac))
+      (do ;; REDIRECT TO RECOVER FORCIBLY
+        (log/debug "RTC LOGIC:" current-view signed-up? "Refreshing to RECOVER")
+        :recover)
+      (if (or (contains? #{:login :chat :recover :accounts} current-view) ;; ORG LOGIC
+              signed-up?)
+        current-view
+        :chat))))
 
 (defn app-root []
   (let [signed-up?      (subscribe [:signed-up?])

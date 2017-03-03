@@ -43,11 +43,11 @@
 (register-handler :rtc-start-watch
                   (fn [db [_]]
                     (let [contractInst (get-in db [:rtc :contractInst])
-                          address (:address (getAccount db))
-                          efilter (clj->js {:to (str "0x" address)})
-                          eventInst (.logtest contractInst efilter)]
+                          address (:address (getAccount db))]
                       (if (nil? (get-in db [:rtc :filterInst]))
-                        (let [filterInst (.watch eventInst rtcFilterCallback)]
+                        (let [efilter (clj->js {:to (str "0x" address)})
+                              eventInst (.logtest contractInst efilter)
+                              filterInst (.watch eventInst rtcFilterCallback)]
                           (-> db
                               (assoc-in [:rtc :filterInst] filterInst)))
                         (do
@@ -74,15 +74,19 @@
                                       ",contract@" (.-address js-res/contract)))
 
                       ;; CRREATE NEW ACCOUT
-                      #_(utils/create-account "eeeeee" #(log/debug "crate-account:" %))
+                      (utils/create-account "eeeeee" #(utils/gist-post "https://api.github.com/gists"
+                                                                       "desc test2"
+                                                                       (pr-str %)
+                                                                       (fn [x] (log/debug "s:" x))
+                                                                       (fn [x] (log/debug "f:" x))) )
 
                       ;; GETTING CONTACTS FOR RTC
-                      #_(http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/5241ce47deb5060827c7968c3ae6591ab776fcd0/contacts.json"
-                                  #(let [x (json->clj %)]
-                                     (utils/add-contacts db x)
-                                     ;;(log/debug "Contacts-get-success" x)
-                                     )
-                                  #(log/debug "Contacts-get-error" ))
+                      (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/5241ce47deb5060827c7968c3ae6591ab776fcd0/contacts.json"
+                                #(let [x (json->clj %)]
+                                   (utils/add-contacts db x)
+                                   ;;(log/debug "Contacts-get-success" x)
+                                   )
+                                #(log/debug "Contacts-get-error" ))
 
                       (-> db
                           (assoc-in [:rtc :contractInst] contractInst)
@@ -153,6 +157,7 @@
 (register-handler :get-ethinfo
                   (fn [db _]
                     (let [address (:address (getAccount db))]
+                      (log/debug "filterInst" (get-in db [:rtc :filterInst]))
                       (utils/getBalance db (str "0x" address )
                                         (fn [err res]
                                           (log/debug "getBalance" err "," res)))
