@@ -4,6 +4,7 @@
             [clojure.string :as str]
             [status-im.components.react :refer [view text image touchable-highlight]]
             [status-im.rtc.styles :as st]
+            [status-im.rtc.utils :as utils]
             [status-im.components.status-view.view :refer [status-view]]
             [status-im.utils.gfycat.core :refer [generate-gfy]]
             [status-im.utils.identicon :refer [identicon]]
@@ -24,17 +25,25 @@
   [contacts [:get :contacts]]
   (let [item-style (get-in platform-specific [:component-styles :discover :item])
         from        (let [a (h/normalize-hex address)
-                          x (filter #(= (:address (nth % 1)) a) contacts)]
+                          x (nth (filter #(= (:address (nth % 1)) a)
+                                         #_#(let [concat (nth % 1)]
+                                              (and (= (:address concat) a)
+                                                   (:dapps? concat)))
+                                         contacts)
+                                 0)]
                       (doall (map #(log/debug "rtc-list-item-d: " (:address (nth % 1))) contacts))
                       (if (empty? x)
-                        {:name address
-                         :whisper-id nil}
-                        (nth x 0)) )
+                        (do
+                          (log/debug "NOT-FOUND" address)
+                          {:name address
+                           :whisper-identity nil})
+                        (do
+                          (log/debug "FOUND" (nth x 1))
+                          (nth x 1))) )
         name (:name from)
-        whisper-id (:whisper-id from)
+        whisper-id (:whisper-identity from)
         ]
-    (log/debug "rtc-list-item: " message)
-    
+    (log/debug "rtc-list-item:" (utils/removePhotoPath message))
     [view
      [view st/popular-list-item
       [view st/popular-list-item-name-container
@@ -51,8 +60,7 @@
                    (:icon item-style))
        [touchable-highlight {:on-press (if (nil? whisper-id)
                                          #(log/debug "rtc-list-item" "Cannot start-chat!")
-                                         #(dispatch [:start-chat whisper-id]) )
-                             }
+                                         #(dispatch [:start-chat whisper-id]) ) }
         [view
          [ci/chat-icon photo-path
           {:size 36}]]]]]

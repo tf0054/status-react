@@ -20,7 +20,6 @@
             [status-im.components.styles :refer [color-blue
                                                  create-icon]]
             [status-im.rtc.views.list-item :refer [rtc-list-item]]
-            [status-im.rtc.views.popular-list :refer [rtc-popular-list]]
             [status-im.utils.platform :refer [platform-specific]]
             [status-im.i18n :refer [label]]
             [status-im.rtc.styles :as st]
@@ -72,14 +71,14 @@
                     :key   row-id}]))
 
 (defview rtc-main []
-  [discoveries [:get-rtc-card]]
+  [cards [:get-rtc-card]]
   ;; CARD-RECEIVE
   (do (dispatch [:rtc-start-watch])
       ;;
       [drawer-view
        [view st/rtc-tag-container
         [toolbar-view]
-        (if (empty? discoveries)
+        (if (empty? cards)
           [view (merge st/empty-view {:margin-top 55})
            ;; todo change icon
            [icon :group_big contacts-st/empty-contacts-icon]
@@ -89,14 +88,24 @@
             ]]
           [scroll-view (merge {:align-items    :stretch
                                :flex-firection :column
-                               :padding-left     16
-                               :padding-right     16
-                               :margin-top     55}
+                               :padding-left  16
+                               :padding-right 16
+                               :margin-top    25}
                               {:keyboardShouldPersistTaps true
                                :bounces                   false})
            (for [name [0]]
              ^{:key (str "list-rtc-" name)}
-             [rtc-popular-list {:tag name}]) ]
+             [view (merge st/popular-list-container
+                          (get-in platform-specific [:component-styles :discover :popular]))
+              (let [disc (:cards cards)]
+                (for [[i {:keys [message-id] :as card}]
+                      (map-indexed vector disc)]
+                  (do (log/debug "popular: " i message-id)
+                      ^{:key (str "message-rtc-" message-id)}
+                      [rtc-list-item {:message         card
+                                      :show-separator? (not= (inc i) (count disc))}] )
+                  ))]
+             ) ]
           )
         [contacts-action-button]
         ]]) )

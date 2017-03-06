@@ -17,8 +17,8 @@
 (defn- rtcFilterCallback [err res]
   (let [result (:args (js->clj res :keywordize-keys true))]
     (log/debug "rtc-card-receive:" err "," result
-               ",t:" (:from result) "-" (:to result)
-               ",m:" (:message result))
+               ",t:" (:from result) "->" (:to result)
+               ",m:" (:message result) "@" (:block result) )
     (if (nil? result)
       (do
         (log/debug "ERR" result ".")
@@ -26,11 +26,10 @@
         (dispatch [:rtc-stop-watch]))
       (dispatch [:rtc-receive-card
                  (-> {:photo-path js-res/photo} ;FAKE
-                     (assoc-in [:message-id] (:block result)) ;FAKE
-                     ;;(assoc-in [:whisper-id] (:block result))
+                     (assoc-in [:message-id] (:block result))
                      (assoc-in [:address] (:from result)) ;Sender address
-                     (assoc-in [:status] (str (:message result) "." (rand-int 10000)))
-                     (assoc-in [:name] (str (:from result) "." (rand-int 100)))
+                     (assoc-in [:status] (str (:message result))) ;Message body
+                     (assoc-in [:name] (str (:from result)))
                      )
                  ]) )
     ))
@@ -92,13 +91,14 @@
 (register-handler :rtc-receive-card
                   (fn [db [_ x]]
                     (let [message-id (:message-id x)
-                          cards (get-in db [:rtc :discoveries])
+                          cards (get-in db [:rtc :cards])
                           exists-cards (into (hash-set) (map #(:message-id %) cards))]
-                      (log/debug :rtc-receive-card x "," exists-cards "," cards)
+                      (log/debug :rtc-receive-card (utils/removePhotoPath x) "," exists-cards ","
+                                 (utils/removePhotoPathFromArray cards))
                       (if (contains? exists-cards message-id)
                         (do (log/debug "Dupricated card found:" message-id)
                             db)
-                        (assoc-in db [:rtc :discoveries]
+                        (assoc-in db [:rtc :cards]
                                   (if (nil? cards)
                                     [x]
                                     (conj cards x) ))))
@@ -166,10 +166,14 @@
                       ;;
                       (utils/getBalance db adr
                                         (fn [err res]
-                                          (log/debug "getBalance(" adr ")" err "," (utils/wei2eth db res))))
+                                          (log/debug "getBalance(" adr ")" err ","
+                                                     (utils/wei2eth db res)
+                                                     )))
                       (utils/getBalance db rtc
                                         (fn [err res]
-                                          (log/debug "getBalance(" rtc ")" err "," (utils/wei2eth db res))))
+                                          (log/debug "getBalance(" rtc ")" err ","
+                                                     (utils/wei2eth db res)
+                                                     )))
                       (utils/getPeerCount db
                                           (fn [err res]
                                             (utils/showToast (str "Peers:" res))

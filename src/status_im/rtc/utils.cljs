@@ -13,6 +13,8 @@
     (get-in db [:accounts current-account-id]))
   )
 
+;;
+
 (defn http-post [url data on-success on-error]
   (-> (.fetch js/window
               url
@@ -123,6 +125,14 @@
                    func
                    #_(fn [err res]
                        (log/debug "getPeerCount" err "," res)) ) ) )
+
+;; 
+
+(defn removePhotoPath [x]
+  (dissoc % :photo-path) )
+
+(defn removePhotoPathFromArray [ary]
+  (into [] (map removePhotoPath ary)) )
 
 ;; React-native
 
