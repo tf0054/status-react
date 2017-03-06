@@ -14,11 +14,6 @@
             [status-im.utils.types :refer [json->clj]]
             [taoensso.timbre :as log]))
 
-(defn- getAccount [db]
-  (let [current-account-id (:current-account-id db)]
-    (get-in db [:accounts current-account-id]))
-  )
-
 (defn- rtcFilterCallback [err res]
   (let [result (:args (js->clj res :keywordize-keys true))]
     (log/debug "rtc-card-receive:" err "," result
@@ -31,8 +26,8 @@
         (dispatch [:rtc-stop-watch]))
       (dispatch [:rtc-receive-card
                  (-> {:photo-path js-res/photo} ;FAKE
-                     (assoc-in [:message-id] (rand-int 10000)) ;FAKE
-                     (assoc-in [:whisper-id] "A") ;FAKE
+                     (assoc-in [:message-id] (:block result)) ;FAKE
+                     ;;(assoc-in [:whisper-id] (:block result))
                      (assoc-in [:address] (:from result)) ;Sender address
                      (assoc-in [:status] (str (:message result) "." (rand-int 10000)))
                      (assoc-in [:name] (str (:from result) "." (rand-int 100)))
@@ -43,7 +38,7 @@
 (register-handler :rtc-start-watch
                   (fn [db [_]]
                     (let [contractInst (get-in db [:rtc :contractInst])
-                          address (:address (getAccount db))]
+                          address (:address (utils/getAccount db))]
                       (if (nil? (get-in db [:rtc :filterInst]))
                         (let [efilter (clj->js {:to (str "0x" address)})
                               eventInst (.logtest contractInst efilter)
@@ -66,7 +61,7 @@
 (register-handler :initialize-rtc ;; called from src/status-im/handlers.cljs
                   (fn [db [_]]
                     (let [ABI (.-abi js-res/contract)
-                          address (:address (getAccount db))
+                          address (:address (utils/getAccount db))
                           contractInst (.at (.contract (.-eth (:web3 db)) ABI) (.-address js-res/contract))
                           ]
                       (log/debug :initialize-rtc ;;(:accounts db)
@@ -74,17 +69,17 @@
                                       ",contract@" (.-address js-res/contract)))
 
                       ;; CRREATE NEW ACCOUT
-                      (utils/create-account "eeeeee" #(utils/gist-post "https://api.github.com/gists"
-                                                                       "desc test2"
-                                                                       (pr-str %)
-                                                                       (fn [x] (log/debug "s:" x))
-                                                                       (fn [x] (log/debug "f:" x))) )
+                      #_(utils/create-account "eeeeee" #(utils/gist-post "https://api.github.com/gists"
+                                                                         "desc test2"
+                                                                         (pr-str %)
+                                                                         (fn [x] (log/debug "s:" x))
+                                                                         (fn [x] (log/debug "f:" x))) )
 
                       ;; GETTING CONTACTS FOR RTC
-                      (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/5241ce47deb5060827c7968c3ae6591ab776fcd0/contacts.json"
+                      (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/e06d133c225f238f2af510221eb7b5a000e94472/contacts.json"
                                 #(let [x (json->clj %)]
                                    (utils/add-contacts db x)
-                                   ;;(log/debug "Contacts-get-success" x)
+                                   (log/debug "Contacts-get-success" x)
                                    )
                                 #(log/debug "Contacts-get-error" ))
 
@@ -96,11 +91,17 @@
 
 (register-handler :rtc-receive-card
                   (fn [db [_ x]]
-                    (log/debug :rtc-receive-card x "," (get-in db [:rtc :discoveries]))
-                    (assoc-in db [:rtc :discoveries]
-                              (if (nil? (get-in db [:rtc :discoveries]))
-                                [x]
-                                (conj (get-in db [:rtc :discoveries]) x) ))
+                    (let [message-id (:message-id x)
+                          cards (get-in db [:rtc :discoveries])
+                          exists-cards (into (hash-set) (map #(:message-id %) cards))]
+                      (log/debug :rtc-receive-card x "," exists-cards "," cards)
+                      (if (contains? exists-cards message-id)
+                        (do (log/debug "Dupricated card found:" message-id)
+                            db)
+                        (assoc-in db [:rtc :discoveries]
+                                  (if (nil? cards)
+                                    [x]
+                                    (conj cards x) ))))
                     ))
 
 (register-handler :set-card-to
@@ -126,7 +127,7 @@
 (register-handler :regist-card
                   (fn [db  [_ success fail]]
                     (let [eth (.-eth (:web3 db))
-                          address (:address (getAccount db))]
+                          address (:address (utils/getAccount db))]
                       (log/debug :regist-card
                                  "msg:" (get-in db [:rtc :message]) ","
                                  "by" address "to" (get-in db [:rtc :target_addr]))
@@ -156,14 +157,19 @@
 
 (register-handler :get-ethinfo
                   (fn [db _]
-                    (let [address (:address (getAccount db))]
-                      (log/debug "filterInst" (get-in db [:rtc :filterInst]))
-                      (utils/getBalance db (str "0x" address )
+                    (let [x (utils/getAccount db)
+                          adr (str "0x" (:address x))
+                          rtc "0x39c4B70174041AB054f7CDb188d270Cc56D90da8"]
+                      ;;
+                      #_(log/debug "filterInst" (get-in db [:rtc :filterInst]))
+                      (log/debug "public-key" (:public-key x))
+                      ;;
+                      (utils/getBalance db adr
                                         (fn [err res]
-                                          (log/debug "getBalance" err "," res)))
-                      (utils/getBalance db "0x39c4B70174041AB054f7CDb188d270Cc56D90da8"
+                                          (log/debug "getBalance(" adr ")" err "," (utils/wei2eth db res))))
+                      (utils/getBalance db rtc
                                         (fn [err res]
-                                          (log/debug "getBalance" err "," res)))
+                                          (log/debug "getBalance(" rtc ")" err "," (utils/wei2eth db res))))
                       (utils/getPeerCount db
                                           (fn [err res]
                                             (utils/showToast (str "Peers:" res))

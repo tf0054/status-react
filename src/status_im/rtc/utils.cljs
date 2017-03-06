@@ -8,6 +8,11 @@
             )
   )
 
+(defn- getAccount [db]
+  (let [current-account-id (:current-account-id db)]
+    (get-in db [:accounts current-account-id]))
+  )
+
 (defn http-post [url data on-success on-error]
   (-> (.fetch js/window
               url
@@ -64,25 +69,34 @@
     (when normalized-key
       (subs (.sha3 js/Web3.prototype normalized-key #js {:encoding "hex"}) 26))))
 
-(defn add-contacts [{:keys [chats]} x]
+(defn add-contacts [db x]
   (doseq [[id {:keys [name photo-path public-key add-chat?
                       dapp? dapp-url dapp-hash]}] x]
-    (let [id' (clojure.core/name id)]
+    (let [id' (clojure.core/name id)
+          chats (:chats db)]
       (when-not (chats id')
         (when add-chat?
           (dispatch [:add-chat id' {:name (:en name)}]))
-        (dispatch [:add-contacts [{:whisper-identity id'
-                                   :address          (public-key->address id')
-                                   :name             (:en name)
-                                   :photo-path       (if (nil? photo-path)
-                                                       (identicon public-key)
-                                                       photo-path)
-                                   :public-key       public-key
-                                   :dapp?            dapp?
-                                   :dapp-url         (:en dapp-url)
-                                   :dapp-hash        dapp-hash}]])))))
+        (if (= (:public-key (getAccount db)) id')
+          (log/debug "add-contacts/skipped" id')
+          (do (log/debug "add-contacts/added" id' (:en name))
+              (dispatch [:remove-contact id' #(or true %)]) ;; true 
+              (dispatch [:add-contacts [{:whisper-identity id'
+                                         :address          (public-key->address id')
+                                         :name             (:en name)
+                                         :photo-path       (if (nil? photo-path)
+                                                             (identicon public-key)
+                                                             photo-path)
+                                         :public-key       public-key
+                                         :dapp?            dapp?
+                                         :dapp-url         (:en dapp-url)
+                                         :dapp-hash        dapp-hash}]])))
+        ))) )
 
 ;; Ethereum
+
+(defn wei2eth [db x]
+  (.fromWei (:web3 db) x "ether"))
 
 (defn getBalance [db address func]
   ;;(log/debug :get-balance)

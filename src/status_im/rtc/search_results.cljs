@@ -55,7 +55,7 @@
         [ion-icon {:name  :md-create
                    :style create-icon}]]
      [action-button-item
-      {:title       "DIALOG"
+      {:title       "DEBUG(ETH)"
        :buttonColor :#9bf9b6
        :onPress     #(do
                        (dispatch [:get-ethinfo])

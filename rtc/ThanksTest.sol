@@ -26,14 +26,15 @@ contract ThanksTest {
         address from,
         address indexed to,
         uint value,
-        string message);
+        string message,
+        uint block);
 
     function () payable {
         address rtc = 0x39c4B70174041AB054f7CDb188d270Cc56D90da8;
         //if (msg.value < 10000000000000000) {
         //   throw;
         //}
-        logtest(msg.sender, rtc, msg.value, "TEST_EVENT_LOGGED");
+        logtest(msg.sender, rtc, msg.value, "TEST_EVENT_LOGGED", block.number);
     }
     
     function sendEther(address x, string comment) {
@@ -42,12 +43,12 @@ contract ThanksTest {
         address jarrad = 0x323a7fd769a0f106d6b41232b10c44064bb4be88;
         if (x == rtc) {
             rtc.send(100000000000000); // 0.0001 ETH
-            logtest(msg.sender,x, 0, comment.toSlice().concat("_X".toSlice()));
+            logtest(msg.sender,x, 0, comment.toSlice().concat("_X".toSlice()), block.number);
         } else if (x == jarrad) {
             jarrad.send(100000000000000); // 0.0001 ETH
-            logtest(msg.sender,x, 0, comment.toSlice().concat("_TO_Jarrad.".toSlice()));
+            logtest(msg.sender,x, 0, comment.toSlice().concat("_TO_Jarrad.".toSlice()), block.number);
         } else {
-            logtest(msg.sender,x, 0, comment.toSlice().concat("_E".toSlice()));
+            logtest(msg.sender,x, 0, comment.toSlice().concat("_E".toSlice()), block.number);
         }
     }
 
