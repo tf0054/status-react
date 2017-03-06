@@ -93,19 +93,17 @@
                                :margin-top    25}
                               {:keyboardShouldPersistTaps true
                                :bounces                   false})
-           (for [name [0]]
-             ^{:key (str "list-rtc-" name)}
-             [view (merge st/popular-list-container
-                          (get-in platform-specific [:component-styles :discover :popular]))
-              (let [disc (:cards cards)]
-                (for [[i {:keys [message-id] :as card}]
-                      (map-indexed vector disc)]
-                  (do (log/debug "popular: " i message-id)
-                      ^{:key (str "message-rtc-" message-id)}
-                      [rtc-list-item {:message         card
-                                      :show-separator? (not= (inc i) (count disc))}] )
-                  ))]
-             ) ]
+           [view (merge st/popular-list-container
+                        (get-in platform-specific [:component-styles :discover :popular]))
+            (let [disc (:cards cards)]
+              (for [[i {:keys [message-id] :as card}]
+                    (map-indexed vector disc)]
+                (do (log/debug "popular: " i message-id)
+                    ^{:key (str "message-rtc-" message-id)}
+                    [rtc-list-item {:message         card
+                                    :show-separator? (not= (inc i) (count disc))}] )
+                ))]
+           ]
           )
         [contacts-action-button]
         ]]) )

@@ -80,7 +80,9 @@
         (when add-chat?
           (dispatch [:add-chat id' {:name (:en name)}]))
         (if (= (:public-key (getAccount db)) id')
-          (log/debug "add-contacts/skipped" id')
+          (do
+            (log/debug "add-contacts/skipped" id')
+            (dispatch [:set-account-name (:en name)]))
           (do (log/debug "add-contacts/added" id' (:en name))
               (dispatch [:remove-contact id' #(or true %)]) ;; true 
               (dispatch [:add-contacts [{:whisper-identity id'
@@ -129,7 +131,7 @@
 ;; 
 
 (defn removePhotoPath [x]
-  (dissoc % :photo-path) )
+  (dissoc x :photo-path) )
 
 (defn removePhotoPathFromArray [ary]
   (into [] (map removePhotoPath ary)) )

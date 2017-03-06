@@ -187,6 +187,13 @@
                     db
                     ))
 
+(register-handler :set-account-name
+                  (fn [db [_ name]]
+                    (let [current-account-id (:current-account-id db)]
+                      (-> db
+                          (assoc-in [:accounts current-account-id :name] name))
+                      )))
+
 (register-handler :set-blocknumber
                   (fn [db [_ num]]
                     #_(log/debug :set-blocknumber)
