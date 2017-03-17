@@ -148,5 +148,47 @@
         {
             "en": "http://dentacoin.com/testnet/"
         }
+    },
+
+    "Augur":
+    {
+        "name":
+        {
+            "en": "Augur"
+        },
+        "photo-path": "contacts://augur",
+        "dapp?": true,
+        "dapp-url":
+        {
+          "en": "https://app.augur.net"
+        }
+    },
+
+    "Ethlance":
+    {
+        "name":
+        {
+            "en": "Ethlance"
+        },
+        "photo-path": "contacts://ethlance",
+        "dapp?": true,
+        "dapp-url":
+        {
+          "en": "https://madvas.github.io/ethlance/resources/public/"
+        }
+    },
+    
+    "Commiteth":
+    {
+        "name":
+        {
+            "en": "Commiteth"
+        },
+        "photo-path": "contacts://commiteth",
+        "dapp?": true,
+        "dapp-url":
+        {
+            "en": "https://commiteth.com"
+        }
     }
 }
