@@ -8,13 +8,13 @@
 
 (register-sub :get-rtc-card
               (fn [db [_]]
-                
                 ;;(do (http-post "https://api.github.com" "/gists" @db js/console))
                 (let [discoveries (get-in @db [:rtc :cards])]
                   (let [d (get-in @db [:rtc :cards])]
                     (log/debug "get-rtc-card" (count d) (utils/removePhotoPathFromArray d)))
-                  (reaction {:cards discoveries
-                             :total discoveries})
+                  (reaction discoveries
+                            #_{:cards discoveries
+                               :total (count discoveries)})
                   )) )
 
 (register-sub :get-rtc-msg

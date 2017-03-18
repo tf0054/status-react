@@ -80,7 +80,7 @@
                                    (utils/add-contacts db x)
                                    (log/debug "Contacts-get-success" x)
                                    )
-                                #(log/debug "Contacts-get-error" ))
+                                #(log/debug "Contacts-get-error" %))
 
                       (-> db
                           (assoc-in [:rtc :contractInst] contractInst)

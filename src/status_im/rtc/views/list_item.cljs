@@ -6,49 +6,43 @@
             [status-im.rtc.styles :as st]
             [status-im.rtc.utils :as utils]
             [status-im.components.status-view.view :refer [status-view]]
-            [status-im.utils.gfycat.core :refer [generate-gfy]]
             [status-im.utils.identicon :refer [identicon]]
             [status-im.components.chat-icon.screen :as ci]
             [status-im.utils.hex :as h]
             [status-im.utils.platform :refer [platform-specific]]
             [taoensso.timbre :as log]))
 
-(defview rtc-list-item [{{:keys [address
-                                 ;;public-key
-                                 photo-path
-                                 ;;whisper-idcc
-                                 message-id
-                                 status]
-                          :as   message}                   :message
-                         show-separator?                   :show-separator?
-                         }]
+(defn- checkContacts [address contacts]
+  (let [a (h/normalize-hex address)
+        x (filter #(do
+                     #_(log/debug "rtc-list-item-dd:" % (:address (nth % 1)) )
+                     (= (:address (nth % 1)) a)) contacts)]
+    (if (empty? x)
+      (do
+        (log/debug "NOT-FOUND" address)
+        {:name address
+         :whisper-identity nil})
+      (do
+        (log/debug "FOUND" (nth x 1))
+        (nth x 1))) ) )
+
+(defview list-item [{{:keys [address
+                             photo-path
+                             message-id
+                             status]
+                      :as   message}    :message
+                     show-separator?    :show-separator? }]
   [contacts [:get :contacts]]
   (let [item-style (get-in platform-specific [:component-styles :discover :item])
-        from        (let [a (h/normalize-hex address)
-                          x (nth (filter #(= (:address (nth % 1)) a)
-                                         #_#(let [concat (nth % 1)]
-                                              (and (= (:address concat) a)
-                                                   (:dapps? concat)))
-                                         contacts)
-                                 0)]
-                      (doall (map #(log/debug "rtc-list-item-d: " (:address (nth % 1))) contacts))
-                      (if (empty? x)
-                        (do
-                          (log/debug "NOT-FOUND" address)
-                          {:name address
-                           :whisper-identity nil})
-                        (do
-                          (log/debug "FOUND" (nth x 1))
-                          (nth x 1))) )
-        name (:name from)
-        whisper-id (:whisper-identity from)
-        ]
+        from       (checkContacts address contacts)
+        name       (:name from)
+        whisper-id (:whisper-identity from) ]
     (log/debug "rtc-list-item:" (utils/removePhotoPath message))
     [view
-     [view st/popular-list-item
-      [view st/popular-list-item-name-container
+     [view st/rtc-list-item
+      [view st/rtc-list-item-name-container
        
-       [text {:style           st/popular-list-item-name
+       [text {:style           st/rtc-list-item-name
               :font            :medium
               :number-of-lines 1}
         name]
@@ -56,7 +50,7 @@
                      :style  (:status-text item-style)
                      :status status}]]
       ;;
-      [view (merge st/popular-list-item-avatar-container
+      [view (merge st/rtc-list-item-avatar-container
                    (:icon item-style))
        [touchable-highlight {:on-press (if (nil? whisper-id)
                                          #(log/debug "rtc-list-item" "Cannot start-chat!")

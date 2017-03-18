@@ -66,28 +66,31 @@
 
 ;; Popular list item
 
-(def popular-list-container
+(def rtc-list-container
   {:flex             1
-   :background-color :white
-   :padding-top      18
-   :padding-left     16})
+   :background-color "#838c93"
+   ;; :padding-top      18
+   ;; :padding-left     16
+   })
 
-(def popular-list-item
-  {:flex-direction :row
-   :padding-bottom 16
+(def rtc-list-item
+  {:background-color :white
+   :flex-direction   :row
+   :padding-bottom   16
+   :padding-left     16
    :top 1})
 
-(def popular-list-item-name
+(def rtc-list-item-name
   {:color          "black"
    :font-size      15
    :padding-bottom 4})
 
-(def popular-list-item-name-container
+(def rtc-list-item-name-container
   {:flex           0.8
    :flex-direction "column"
    :padding-top    16})
 
-(def popular-list-item-avatar-container
+(def rtc-list-item-avatar-container
   {:flex           0.2
    :flex-direction "column"
    :align-items    :center

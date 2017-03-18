@@ -19,7 +19,7 @@
                                                         action-button-item]]
             [status-im.components.styles :refer [color-blue
                                                  create-icon]]
-            [status-im.rtc.views.list-item :refer [rtc-list-item]]
+            [status-im.rtc.views.list-item :refer [list-item]]
             [status-im.utils.platform :refer [platform-specific]]
             [status-im.i18n :refer [label]]
             [status-im.rtc.styles :as st]
@@ -93,16 +93,14 @@
                                :margin-top    25}
                               {:keyboardShouldPersistTaps true
                                :bounces                   false})
-           [view (merge st/popular-list-container
+           [view (merge st/rtc-list-container
                         (get-in platform-specific [:component-styles :discover :popular]))
-            (let [disc (:cards cards)]
-              (for [[i {:keys [message-id] :as card}]
-                    (map-indexed vector disc)]
-                (do (log/debug "popular: " i message-id)
-                    ^{:key (str "message-rtc-" message-id)}
-                    [rtc-list-item {:message         card
-                                    :show-separator? (not= (inc i) (count disc))}] )
-                ))]
+            (for [[i {:keys [message-id] :as card}]
+                  (map-indexed vector cards)]
+              (do (log/debug "popular: " i message-id)
+                  ^{:key (str "message-rtc-" message-id)}
+                  [list-item {:message         card
+                              :show-separator? (not= (inc i) (count cards))}] ))]
            ]
           )
         [contacts-action-button]
