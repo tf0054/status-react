@@ -63,9 +63,9 @@
   (let [ac (subscribe [:get-in [:accounts]])
         cc (subscribe [:get-current-account])
         address (nth (keys @ac) 0)]
-    (log/debug "RTC LOGIC:" current-view signed-up?
-               (update-in @ac [address] dissoc :photo-path) "-"
-               (dissoc @cc :photo-path))
+    #_(log/debug "RTC LOGIC:" current-view signed-up?
+                 (update-in @ac [address] dissoc :photo-path) "-"
+                 (dissoc @cc :photo-path))
     (if (and (= 1 (count @ac)) (nil? @cc)) ;; FOR AFTER RECOVERED
       (do (dispatch [:set-current-account address])
           (dispatch [:navigate-to :login address])

@@ -79,7 +79,7 @@
        [view st/rtc-tag-container
         [toolbar-view]
         (if (empty? cards)
-          [view (merge st/empty-view {:margin-top 55})
+          [view (merge st/empty-view {:margin-top 0})
            ;; todo change icon
            [icon :group_big contacts-st/empty-contacts-icon]
            [text {:style contacts-st/empty-contacts-text}

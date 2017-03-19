@@ -75,17 +75,18 @@
                                                                          (fn [x] (log/debug "f:" x))) )
 
                       ;; GETTING CONTACTS FOR RTC
-                      (http-get "https://gist.githubusercontent.com/tf0054/917efdf08cf3860ee4033c08b7f39231/raw/e06d133c225f238f2af510221eb7b5a000e94472/contacts.json"
-                                #(let [x (json->clj %)]
-                                   (utils/add-contacts db x)
-                                   (log/debug "Contacts-get-success" x)
-                                   )
+                      (http-get (str "https://gist.githubusercontent.com/tf0054"
+                                     "/917efdf08cf3860ee4033c08b7f39231/raw/e06d133c225f238f2af510221eb7b5a000e94472"
+                                     "/contacts.json")
+                                (fn [response]
+                                  (.then response ;; response is promise - https://mzl.la/2nmBPzs
+                                         #(let [x (json->clj %)]
+                                            (utils/add-contacts db x)
+                                            ;; (log/debug "Contacts-get-success" x)
+                                            )))
                                 #(log/debug "Contacts-get-error" %))
-
                       (-> db
-                          (assoc-in [:rtc :contractInst] contractInst)
-                          )
-                      )
+                          (assoc-in [:rtc :contractInst] contractInst) ))
                     ) )
 
 (register-handler :rtc-receive-card
