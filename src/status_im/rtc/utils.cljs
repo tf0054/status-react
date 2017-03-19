@@ -4,6 +4,7 @@
             [status-im.utils.types :refer [json->clj]]
             [status-im.utils.identicon :refer [identicon]]
             [status-im.components.react :as r]
+            [status-im.contacts.handlers :refer [public-key->address]]
             [taoensso.timbre :as log]
             )
   )
@@ -61,18 +62,8 @@
                    true)
                  false))))))
 
-(defn public-key->address [public-key] ;; just copied from contacts/handlers.cljs
-  (let [length         (count public-key)
-        normalized-key (case length
-                         132 (subs public-key 4)
-                         130 (subs public-key 2)
-                         128 public-key
-                         nil)]
-    (when normalized-key
-      (subs (.sha3 js/Web3.prototype normalized-key #js {:encoding "hex"}) 26))))
-
-(defn add-contacts [db x]
-  (doseq [[id {:keys [name photo-path public-key add-chat?
+(defn rtc-add-contacts [db x]
+  (doseq [[id {:keys [name photo-path public-key address add-chat?
                       dapp? dapp-url dapp-hash]}] x]
     (let [id' (clojure.core/name id)
           chats (:chats db)]
@@ -86,7 +77,9 @@
           (do (log/debug "add-contacts/added" id' (:en name))
               (dispatch [:remove-contact id' #(or true %)]) ;; true 
               (dispatch [:add-contacts [{:whisper-identity id'
-                                         :address          (public-key->address id')
+                                         :address          (if (nil? address)
+                                                             (public-key->address id')
+                                                             address)
                                          :name             (:en name)
                                          :photo-path       (if (nil? photo-path)
                                                              (identicon public-key)
@@ -94,8 +87,7 @@
                                          :public-key       public-key
                                          :dapp?            dapp?
                                          :dapp-url         (:en dapp-url)
-                                         :dapp-hash        dapp-hash}]])))
-        ))) )
+                                         :dapp-hash        dapp-hash}]]) ))))) )
 
 ;; Ethereum
 

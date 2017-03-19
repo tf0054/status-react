@@ -97,7 +97,7 @@
                         (get-in platform-specific [:component-styles :discover :popular]))
             (for [[i {:keys [message-id] :as card}]
                   (map-indexed vector cards)]
-              (do (log/debug "popular: " i message-id)
+              (do (log/debug "popular: " i "message-id=" message-id)
                   ^{:key (str "message-rtc-" message-id)}
                   [list-item {:message         card
                               :show-separator? (not= (inc i) (count cards))}] ))]

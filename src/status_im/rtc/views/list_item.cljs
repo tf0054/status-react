@@ -15,16 +15,16 @@
 (defn- checkContacts [address contacts]
   (let [a (h/normalize-hex address)
         x (filter #(do
-                     #_(log/debug "rtc-list-item-dd:" % (:address (nth % 1)) )
-                     (= (:address (nth % 1)) a)) contacts)]
+                     #_(log/debug "rtc-list-item-dd:" %)
+                     (= (:address (get contacts %)) a)) (keys contacts))]
     (if (empty? x)
       (do
         (log/debug "NOT-FOUND" address)
         {:name address
          :whisper-identity nil})
-      (do
-        (log/debug "FOUND" (nth x 1))
-        (nth x 1))) ) )
+      (let [found (get contacts (nth x 0))]
+        (log/debug "FOUND" x found)
+        found)) ) )
 
 (defview list-item [{{:keys [address
                              photo-path
