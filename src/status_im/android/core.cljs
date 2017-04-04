@@ -51,7 +51,8 @@
             [status-im.components.status :as status]
             [status-im.components.styles :as st]
             [status-im.chat.styles.screen :as chat-st]
-            [status-im.profile.qr-code.screen :refer [qr-code-view]]))
+            [clojure.string :as str]
+            ))
 
 (defn init-back-button-handler! []
   (let [new-listener (fn []
@@ -72,7 +73,7 @@
 (defn orientation->keyword [o]
   (keyword (.toLowerCase o)))
 
-(defn validate-current-view [current-view signed-up?] ;; RECOVER FLOW ADDED TEMPORARILY  
+(defn validate-current-view [current-view signed-up?] ;; RECOVER FLOW ADDED TEMPORARILY
   (let [ac (subscribe [:get-in [:accounts]])
         cc (subscribe [:get-current-account])
         address (nth (keys @ac) 0)]
@@ -177,7 +178,15 @@
                                        :contact-list-modal contact-list-modal)]
                        [component])]])]]))))})))
 
+(def warn (js/console.warn.bind js/console))
+
 (defn init []
+  (re-frame.core/set-loggers!
+    {:warn (fn [& args]
+      (cond
+        (str/starts-with? (first args) "re-frame: overwriting ") nil
+        :else (apply warn args)))})
+
   (dev/dev-setup)
   (status/call-module status/init-jail)
   (dispatch-sync [:reset-app])

@@ -48,6 +48,10 @@
                                 js-resourced (slurp path)]
                             (spit path (str js-resourced " ;;"))
                             (spit path js-resourced))
+                          (let [path         "src/status_im/rtc/js_resources.cljs"
+                                js-resourced (slurp path)]
+                            (spit path (str js-resourced " ;;"))
+                            (spit path js-resourced))
                           ctx)}])
 
 (defn test-id? [id]
