@@ -6,7 +6,7 @@
                                                 touchable-highlight
                                                 list-view
                                                 list-item]]
-            [status-im.contacts.views.contact :refer [contact-view]]
+            [status-im.components.contact.contact :refer [contact-view]]
             [status-im.components.text-field.view :refer [text-field]]
             [status-im.components.status-bar :refer [status-bar]]
             [status-im.components.toolbar.view :refer [toolbar]]
@@ -18,7 +18,6 @@
             [status-im.utils.listview :as lw]
             [status-im.i18n :refer [label]]
             [status-im.utils.platform :refer [platform-specific]]
-            [status-im.contacts.views.contact-inner :refer [contact-inner-view]]
             [taoensso.timbre :as log]))
 
 (defn render-row [chat-modal action params]

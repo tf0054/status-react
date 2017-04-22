@@ -15,8 +15,8 @@
             [status-im.components.drawer.view :refer [open-drawer drawer-view]]
             [status-im.components.carousel.carousel :refer [carousel]]
             [status-im.components.icons.custom-icons :refer [ion-icon]]
-            [status-im.components.action-button :refer [action-button
-                                                        action-button-item]]
+            [status-im.components.native-action-button :refer [native-action-button
+                                                               native-action-button-item]]
             [status-im.components.styles :refer [color-blue
                                                  create-icon]]
             [status-im.rtc.views.list-item :refer [list-item]]
@@ -36,12 +36,12 @@
 
 (defn contacts-action-button []
   (let [blocknum (subscribe [:get-rtc-blocknumber])]
-    [action-button {:button-color color-blue
+    [native-action-button {:button-color color-blue
                     :offset-x     16
                     :offset-y     22
                     :hide-shadow  true
                     :spacing      13}
-     [action-button-item
+     [native-action-button-item
       {:title       "NEW CARD"
        :buttonColor :#9b59b6
        :onPress     #(dispatch [:navigate-to :rtc-contact])}
@@ -53,7 +53,7 @@
          :onPress     #(dispatch [:get-ethinfo])}
         [ion-icon {:name  :md-create
                    :style create-icon}]]
-     [action-button-item
+     [native-action-button-item
       {:title       "DEBUG(ETH)"
        :buttonColor :#9bf9b6
        :onPress     #(do
