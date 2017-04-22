@@ -50,7 +50,7 @@
         (dispatch [:upsert-chat! {:chat-id    chat-id'
                                   :group-chat group-chat?}])
         (when (get-in message [:content :command])
-          (dispatch [:request-command-preview message]))
+          (dispatch [:request-command-data message :preview]))
         (dispatch [::add-message chat-id' message'])
         (dispatch [::set-last-message message'])
         (when (= (:content-type message') content-type-command-request)
@@ -83,6 +83,7 @@
                                            :chat-id from})]))))
 
 (register-handler :received-message
+  (after #(dispatch [:update-suggestions]))
   (u/side-effect!
     (fn [db [_ message]]
       (add-message db message))))
@@ -93,7 +94,7 @@
 
 (register-handler ::set-last-message
   (fn [{:keys [chats] :as db} [_ {:keys [chat-id] :as message}]]
-    (dispatch [:request-command-preview message :short-preview])
+    (dispatch [:request-command-data message :short-preview])
     (assoc-in db [:chats chat-id :last-message] message)))
 
 (defn commands-loaded? [db chat-id]

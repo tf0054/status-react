@@ -2,7 +2,6 @@ package im.status.ethereum.module;
 
 import android.app.Activity;
 import android.os.*;
-import android.os.Process;
 import android.view.WindowManager;
 import android.util.Log;
 import android.webkit.CookieManager;
@@ -14,10 +13,14 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import com.github.status_im.status_go.cmd.Statusgo;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.json.JSONObject;
+import org.json.JSONException;
 
 class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventListener, ConnectorHandler {
 
@@ -28,12 +31,14 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
     private static StatusModule module;
     private ServiceConnector status = null;
     private ExecutorService executor = null;
+    private boolean debug;
 
-    StatusModule(ReactApplicationContext reactContext) {
+    StatusModule(ReactApplicationContext reactContext, boolean debug) {
         super(reactContext);
         if (executor == null) {
             executor = Executors.newCachedThreadPool();
         }
+        this.debug = debug;
         reactContext.addLifecycleEventListener(this);
     }
 
@@ -99,8 +104,8 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
 
         File extStore = Environment.getExternalStorageDirectory();
         String dataFolder = extStore.exists() ?
-                extStore.getAbsolutePath() + "/ethereum" :
-                currentActivity.getApplicationInfo().dataDir + "/ethereum";
+                extStore.getAbsolutePath() + "/ethereum/testnet" :
+                currentActivity.getApplicationInfo().dataDir + "/ethereum/testnet";
         Log.d(TAG, "Starting Geth node in folder: " + dataFolder);
 
         try {
@@ -111,7 +116,44 @@ class StatusModule extends ReactContextBaseJavaModule implements LifecycleEventL
             Log.e(TAG, "error making folder: " + dataFolder, e);
         }
 
-        Statusgo.StartNode(dataFolder);
+        final String ropstenFlagPath = dataFolder + "/ropsten_flag";
+        final File ropstenFlag = new File(ropstenFlagPath);
+        if (!ropstenFlag.exists()) {
+            try {
+                final String chaindDataFolderPath = dataFolder + "/StatusIM/lightchaindata";
+                final File lightChainFolder = new File(chaindDataFolderPath);
+                if (lightChainFolder.isDirectory())
+                {
+                    String[] children = lightChainFolder.list();
+                    for (int i = 0; i < children.length; i++)
+                    {
+                        new File(lightChainFolder, children[i]).delete();
+                    }
+                }
+                lightChainFolder.delete();
+                ropstenFlag.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        String config;
+        String defaultConfig = Statusgo.GenerateConfig(dataFolder, 3);
+        try {
+            JSONObject jsonConfig = new JSONObject(defaultConfig);
+            jsonConfig.put("LogEnabled", this.debug);
+            jsonConfig.put("LogFile", "geth.log");
+            jsonConfig.put("LogLevel", "DEBUG");
+
+            config = jsonConfig.toString();
+        } catch (JSONException e) {
+            Log.d(TAG, "Something went wrong " + e.getMessage());
+            Log.d(TAG, "Default configuration will be used");
+
+            config = defaultConfig;
+        }
+
+        Statusgo.StartNode(config);
         Log.d(TAG, "Geth node started");
     }
 

@@ -42,7 +42,7 @@
     "querystring-es3": "^0.2.1",
     "re-natal": "0.2.38",
     "react": "^15.3.1",
-    "react-dom": "^15.3.1",
+    "react-dom": "15.3.1",
     "react-native": "^0.38.0",
     "react-native-action-button": "2.0.13",
     "react-native-android-sms-listener": "github:adrian-tiberius/react-native-android-sms-listener#listener-bugfix",
@@ -65,9 +65,11 @@
     "react-native-linear-gradient": "1.5.7",
     "react-native-network-info": "github:alwx/react-native-network-info",
     "react-native-orientation": "github:youennPennarun/react-native-orientation",
+    "react-native-popup-menu": "^0.7.1",
     "react-native-qrcode": "^0.2.2",
     "react-native-randombytes": "^2.1.0",
     "react-native-share": "1.0.17",
+    "react-native-sortable-listview": "^0.1.1",
     "react-native-splash-screen": "1.0.9",
     "react-native-swiper": "1.5.3",
     "react-native-tcp": "^2.0.4",
@@ -81,7 +83,7 @@
     "tty-browserify": "0.0.0",
     "url": "^0.10.3",
     "vm-browserify": "0.0.4",
-    "web3": "0.16.0"
+    "web3": "github:status-im/web3.js#status-0.18.4"
   },
   "browser": {
     "crypto": "react-native-crypto",

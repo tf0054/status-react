@@ -22,10 +22,18 @@
 ;; && :navigation-replace                                 <- on success
 
 
-(defmethod nav/preload-data! :confirm
+(defmethod nav/preload-data! :unsigned-transactions
   [{:keys [transactions-queue] :as db} _]
   (-> db
       (assoc :transactions transactions-queue
+             :wrong-password-counter 0
+             :wrong-password? false)
+      (assoc-in [:confirm-transactions :password] "")))
+
+(defmethod nav/preload-data! :transaction-details
+  [db [_ _ transaction]]
+  (-> db
+      (assoc :selected-transaction transaction
              :wrong-password-counter 0
              :wrong-password? false)
       (assoc-in [:confirm-transactions :password] "")))
@@ -47,6 +55,11 @@
       (let [ids              (keys transactions)]
         (on-unlock ids password)))))
 
+(register-handler :accept-transaction
+  (u/side-effect!
+   (fn [{:keys [transactions]} [_ password id]]
+     (on-unlock (list id) password))))
+
 (register-handler :deny-transactions
   (u/side-effect!
     (fn [{:keys [transactions]}]
@@ -56,8 +69,7 @@
         (dispatch [::remove-pending-messages messages-ids])
         (dispatch [::remove-transactions ids])
         (doseq [id ids]
-          (dispatch [::discard-transaction id]))
-        (dispatch [:navigate-back])))))
+          (dispatch [::discard-transaction id]))))))
 
 (register-handler :deny-transaction
   (u/side-effect!
@@ -80,9 +92,6 @@
         (update :transactions-queue #(apply dissoc % hashes)))))
 
 (register-handler ::remove-transaction
-  (after (fn [{:keys [modal]}]
-           (when (= :confirm modal)
-             (dispatch [:navigate-back]))))
   (fn [db [_ hash]]
     (-> db
         (update :transactions dissoc hash)
@@ -119,21 +128,24 @@
         (status/discard-transaction id)))))
 
 (register-handler ::transaction-queued
-  (after #(dispatch [:navigate-to-modal :confirm]))
+  (after #(dispatch [:navigate-to-modal :unsigned-transactions]))
   (fn [db [_ {:keys [id message_id args]}]]
-    (let [{:keys [from to value]} args]
+    (let [{:keys [from to value data gas gasPrice]} args]
       (if (valid-hex? to)
         (let [transaction {:id         id
                            :from       from
                            :to         to
                            :value      (.toDecimal js/Web3.prototype value)
+                           :data       data
+                           :gas        (.toDecimal js/Web3.prototype gas)
+                           :gas-price  (.toDecimal js/Web3.prototype gasPrice)
                            :message-id message_id}]
           (assoc-in db [:transactions-queue id] transaction))
         db))))
 
 (register-handler :transaction-completed
   (u/side-effect!
-    (fn [{:keys [transactions]} [_ {:keys [id response]}]]
+    (fn [{:keys [transactions modal]} [_ {:keys [id response]}]]
       (let [{:keys [hash error] :as parsed-response} (t/json->clj response)
             {:keys [message-id]} (transactions id)]
         (log/debug :parsed-response parsed-response)
@@ -144,7 +156,9 @@
                                                     :message-id message-id}])
                 (dispatch [::check-completed-transaction!
                            {:message-id message-id}]))
-            (dispatch [::remove-transaction id])))))))
+            (dispatch [::remove-transaction id]))
+          (when (#{:unsigned-transactions :transaction-details} modal)
+            (dispatch [:navigate-to-modal :confirmation-success])))))))
 
 (register-handler ::add-transactions-hash
   (fn [db [_ {:keys [id hash message-id]}]]
@@ -180,7 +194,7 @@
 
 (register-handler :transaction-failed
   (u/side-effect!
-    (fn [_ [_ {:keys [id message_id error_code]}]]
+    (fn [_ [_ {:keys [id message_id error_code error_message] :as event}]]
       (cond
 
         (= error_code wrong-password-code)
@@ -189,9 +203,16 @@
         (not= discard-code error_code)
         (do (when message_id
               (dispatch [::remove-pending-message message_id]))
-            (dispatch [::remove-transaction id]))
+            (dispatch [:clear-selected-transaction])
+            (dispatch [::remove-transaction id])
+            (dispatch [:set-chat-ui-props :validation-messages error_message]))
 
-        :else nil))))
+        :else
+        (dispatch [:set-chat-ui-props :validation-messages nil])))))
+
+(register-handler :clear-selected-transaction
+  (fn [db _]
+    (dissoc db :selected-transaction)))
 
 (def attempts-limit 3)
 

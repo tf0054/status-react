@@ -37,10 +37,11 @@
                                  (select-keys [:name :color]))]
     (assoc db :new-chat-name name
               :new-chat-color color
+              :group-type :chat-group
               :group-settings {})))
 
 (register-handler :show-group-settings
-  (after (fn [_ _] (dispatch [:navigate-to :group-settings])))
+  (after (fn [_ _] (dispatch [:navigate-to :chat-group-settings])))
   prepare-chat-settings)
 
 (register-handler :set-chat-name
@@ -154,7 +155,7 @@
 (defn add-memebers
   [{:keys [current-chat-id selected-participants] :as db} _]
   (let [new-identities (map #(hash-map :identity %) selected-participants)]
-    (update db [:chats current-chat-id :contacts] concat new-identities)))
+    (update-in db [:chats current-chat-id :contacts] concat new-identities)))
 
 (defn add-members-to-chat!
   [{:keys [current-chat-id selected-participants]} _]
